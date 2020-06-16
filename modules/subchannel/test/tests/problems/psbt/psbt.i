@@ -38,6 +38,14 @@
   []
 []
 
+[Modules]
+  [FluidProperties]
+    [water]
+      type = Water97FluidProperties
+    []
+  []
+[]
+
 [UserObjects]
   [subchannel_solver]
     type = SubChannelSolver
@@ -56,8 +64,9 @@
     wetted_perimeter = w_perim
     q_prime = q_prime
     T_in = 359.15 # K
-    P_out = 4.923 # MPa
-    mflux_in = 17.00 # 10^6 kg/m^2 Hr
+    P_out = 4.923e6 # Pa
+    mflux_in = ${fparse 1e+6 * 17.00 / 3600.}
+    fp = water
   []
 []
 
@@ -73,7 +82,7 @@
   [q_prime_IC]
     type = PsbtPowerIC
     variable = q_prime
-    power = 3.44 #MW
+    power = 3.44e6 # W
     filename = "power_profile.txt" #type in name of file that describes power profile
   []
 []
