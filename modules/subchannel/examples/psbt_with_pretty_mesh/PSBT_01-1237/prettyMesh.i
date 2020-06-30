@@ -3,14 +3,26 @@
 ################################################################################
 
 [Mesh]
-  type = DetailedSubchannelMesh
+  type = DetailedSubChannelMesh
   nx = 6
   ny = 6
-  max_dz = 0.01
+  max_dz = 0.02
+  pitch = 0.0126
+  rod_diameter = 0.00950
+  gap = 0.00095
+  heated_length = 3.658
 []
 
 [AuxVariables]
-  [vz]
+  [mdot]
+  []
+  [SumWij]
+  []
+  [SumWijh]
+  []
+  [SumWijPrimeDhij]
+  []
+  [SumWijPrimeDUij]
   []
   [P]
   []
@@ -20,6 +32,18 @@
   []
   [rho]
   []
+  [q_prime]
+  []
+  [S]
+  []
+  [Sij]
+  []
+  [w_perim]
+  []
+[]
+
+[Problem]
+  type = NoSolveProblem
 []
 
 [Outputs]
@@ -34,31 +58,4 @@
   type = Steady
   nl_rel_tol = 0.9
   l_tol = 0.9
-[]
-
-[Variables]
-  [dummy_var]
-  []
-[]
-
-[Kernels]
-  [dummy_kern]
-    type = Diffusion
-    variable = dummy_var
-  []
-[]
-
-[BCs]
-  [dummy_bc1]
-    variable = dummy_var
-    boundary = 'bottom'
-    type = DirichletBC
-    value = 0
-  []
-  [dummy_bc2]
-    variable = dummy_var
-    boundary = 'top'
-    type = DirichletBC
-    value = 1
-  []
 []
