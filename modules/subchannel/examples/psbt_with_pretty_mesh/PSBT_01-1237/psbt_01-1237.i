@@ -1,3 +1,5 @@
+length = 3.658
+
 [Mesh]
   type = SubChannelMesh
   nx = 6
@@ -5,8 +7,8 @@
   max_dz = 0.02
   pitch = 0.0126
   rod_diameter = 0.00950
-  gap = 0.00095 
-  heated_length = 3.658
+  gap = 0.00095
+  heated_length = ${length}
 []
 
 [AuxVariables]
@@ -38,6 +40,14 @@
   []
 []
 
+[Modules]
+  [FluidProperties]
+    [water]
+      type = Water97FluidProperties
+    []
+  []
+[]
+
 [Problem]
   type = SubChannel1PhaseProblem
   T_in = 359.15
@@ -48,15 +58,15 @@
 
 [ICs]
   [S_IC]
-    type = PsbtFlowAreaIC
+    type = FlowAreaIC
     variable = S
   []
   [w_perim_IC]
-    type = PsbtWettedPerimIC
+    type = WettedPerimIC
     variable = w_perim
   []
   [q_prime_IC]
-    type = PsbtPowerIC
+    type = PowerIC
     variable = q_prime
     power = 3.44e6
     filename = "power_profile.txt"
@@ -66,10 +76,6 @@
 [Outputs]
   exodus = true
 []
-
-################################################################################
-# Stuff needed to make the program execute
-################################################################################
 
 [Executioner]
   type = Steady

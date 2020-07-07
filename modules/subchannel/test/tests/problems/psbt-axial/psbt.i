@@ -1,3 +1,5 @@
+length = 3.658
+
 [Mesh]
   type = SubChannelMesh
   nx = 6
@@ -5,8 +7,8 @@
   max_dz = 0.02
   pitch = 0.0126
   rod_diameter = 0.00950
-  gap = 0.00095 # the half gap between sub-channel assemblies
-  heated_length = 3.658
+  gap = 0.00095
+  heated_length = ${length}
 []
 
 [AuxVariables]
@@ -38,6 +40,15 @@
   []
 []
 
+[Functions]
+  [axial_heat_rate]
+    type = ParsedFunction
+    value = '(pi/2)*sin(pi*z/L)'
+    vars = 'L'
+    vals = '${length}'
+  []
+[]
+
 [Modules]
   [FluidProperties]
     [water]
@@ -48,9 +59,9 @@
 
 [Problem]
   type = SubChannel1PhaseProblem
-  T_in = 359.15 # K
-  P_out = 4.923e6 # Pa
-  mflux_in = ${fparse 1e+6 * 17.00 / 3600.} #Inlet coolant mass flux [1e+6 kg/m^2-hour] turns into kg/m^2-sec
+  T_in = 359.15
+  P_out = 4.923e6
+  mflux_in = ${fparse 1e+6 * 17.00 / 3600.}
   fp = water
 []
 
@@ -66,8 +77,9 @@
   [q_prime_IC]
     type = PowerIC
     variable = q_prime
-    power = 3.44e6 # W
-    filename = "power_profile.txt" #type in name of file that describes power profile
+    power = 3.44e6
+    filename = "power_profile.txt"
+    axial_heat_rate = axial_heat_rate
   []
 []
 
