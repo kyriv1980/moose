@@ -19,19 +19,12 @@ InputParameters
 SubChannel1PhaseProblem::validParams()
 {
   InputParameters params = ExternalProblem::validParams();
-  params.addRequiredParam<Real>("mflux_in", "Inlet coolant mass flux [kg/m^2-s]");
-  params.addRequiredParam<Real>("T_in", "Inlet coolant temperature in [K]");
-  params.addRequiredParam<Real>("P_out", "Outlet coolant pressure in [Pa]");
   params.addRequiredParam<UserObjectName>("fp", "Fluid properties user object name");
   return params;
 }
 
 SubChannel1PhaseProblem::SubChannel1PhaseProblem(const InputParameters & params)
-  : ExternalProblem(params),
-    _subchannel_mesh(dynamic_cast<SubChannelMesh &>(_mesh)),
-    _mflux_in(getParam<Real>("mflux_in")),
-    _T_in(getParam<Real>("T_in")),
-    _P_out(getParam<Real>("P_out"))
+  : ExternalProblem(params), _subchannel_mesh(dynamic_cast<SubChannelMesh &>(_mesh))
 {
 }
 
@@ -61,31 +54,6 @@ SubChannel1PhaseProblem::externalSolve()
   auto w_perim_soln = SolutionHandle(getVariable(0, "w_perim"));
   auto q_prime_soln = SolutionHandle(getVariable(0, "q_prime"));
   constexpr Real g_grav = 9.87; // m/sec^2
-
-  // Set the inlet/outlet/guess for each channel.
-  {
-    for (unsigned int iz = 0; iz < _subchannel_mesh._nz + 1; iz++) // nz + 1 nodes
-    {
-      for (unsigned int i_ch = 0; i_ch < _subchannel_mesh._n_channels;
-           i_ch++) // _n_channels = number of channels
-      {
-        // creates node
-        auto * node = _subchannel_mesh._nodes[i_ch][iz];
-        // Initial enthalpy same everywhere
-        h_soln.set(node, _fp.h_from_p_T(_P_out, _T_in));
-        T_soln.set(node, _T_in);
-        P_soln.set(node, _P_out);
-        // Initial density is the same everywhere
-        rho_soln.set(node, _fp.rho_from_p_T(_P_out, _T_in));
-        SumWij_soln.set(node, 0.0);
-        SumWijh_soln.set(node, 0.0);
-        SumWijPrimeDhij_soln.set(node, 0.0);
-        SumWijPrimeDUij_soln.set(node, 0.0);
-        mdot_soln.set(node, _mflux_in * S_flow_soln(node)); // kg/sec
-        P_soln.set(node, _P_out);
-      }
-    }
-  }
 
   // Initialize  crossflow / Pressure matrixes and vectors to use in calculation set
   // Crossflow
@@ -136,19 +104,33 @@ SubChannel1PhaseProblem::externalSolve()
   WijPrime.setZero();
   Wij_old.setZero();
   Wij_global.setZero();
-  P.setOnes();
-  P_global.setOnes();
-  P_global_old.setOnes();
-  P *= _P_out;
-  P_global *= _P_out;
-  P_global_old *= _P_out;
-  mdot.setOnes();
-  // flow profile same as the inlet on all axial levels
-  mdot *= _mflux_in * S_flow_soln(_subchannel_mesh._nodes[_subchannel_mesh._nx + 1][0]);
-  mdot_old.setOnes();
-  mdot_old *= _mflux_in * S_flow_soln(_subchannel_mesh._nodes[_subchannel_mesh._nx + 1][0]);
-  mdot_global.setOnes();
-  mdot_global *= _mflux_in * S_flow_soln(_subchannel_mesh._nodes[_subchannel_mesh._nx + 1][0]);
+
+  for (unsigned int i_ch = 0; i_ch < _subchannel_mesh._n_channels; i_ch++)
+  {
+    auto * node_out_i = _subchannel_mesh._nodes[i_ch][_subchannel_mesh._nz];
+    auto P_val = P_soln(node_out_i);
+    P(i_ch) = P_val;
+
+    auto * node_in_i = _subchannel_mesh._nodes[i_ch][0];
+    auto m_dot_val = mdot_soln(node_in_i);
+    mdot(i_ch) = m_dot_val;
+    mdot_old(i_ch) = m_dot_val;
+  }
+
+  for (unsigned int iz = 0; iz < _subchannel_mesh._nz + 1; iz++)
+  {
+    for (unsigned int i_ch = 0; i_ch < _subchannel_mesh._n_channels; i_ch++)
+    {
+      auto * node_i = _subchannel_mesh._nodes[i_ch][iz];
+
+      auto P_val = P_soln(node_i);
+      P_global(i_ch, iz) = P_val;
+      P_global_old(i_ch, iz) = P_val;
+
+      auto m_dot_val = mdot_soln(node_i);
+      mdot_global(i_ch, iz) = m_dot_val;
+    }
+  }
 
   // nz level calculations
   for (unsigned int axial_level = 1; axial_level < _subchannel_mesh._nz + 1; axial_level++)
@@ -274,6 +256,7 @@ SubChannel1PhaseProblem::externalSolve()
           }
           /// Calculate Total Sums in sub_channel
           Wij_global.col(iz) = Wij;
+          // calculate Sum values per subchannel
           double SumSumWij = 0.0;
           for (unsigned int i_ch = 0; i_ch < _subchannel_mesh._n_channels; i_ch++)
           {
@@ -338,7 +321,6 @@ SubChannel1PhaseProblem::externalSolve()
             // Find the nodes for the top and bottom of this element.
             auto * node_in = _subchannel_mesh._nodes[i_ch][iz - 1];
             auto * node_out = _subchannel_mesh._nodes[i_ch][iz];
-            auto * node_inlet = _subchannel_mesh._nodes[i_ch][0];
             // Copy the variables at the inlet (bottom) of this element.
             auto mdot_in = mdot_soln(node_in);
             auto h_in = h_soln(node_in); // J/kg
@@ -359,8 +341,12 @@ SubChannel1PhaseProblem::externalSolve()
             rho_soln.set(node_out, rho_out);   // Kg/m3 (This line couples density)
             mdot(i_ch) = mdot_out;
             // Update the solution vectors at the inlet of the whole assembly.
-            h_soln.set(node_inlet, _fp.h_from_p_T(P_soln(node_inlet), _T_in));
-            rho_soln.set(node_inlet, _fp.rho_from_p_T(P_soln(node_inlet), _T_in));
+            // These values will be updated just 5 times depending on the bottom limiter value
+            if (iz == 1)
+            {
+              h_soln.set(node_in, _fp.h_from_p_T(P_soln(node_in), T_soln(node_in)));
+              rho_soln.set(node_in, _fp.rho_from_p_T(P_soln(node_in), T_soln(node_in)));
+            }
           }
           mdot_global.col(iz) = mdot;
           MError = std::sqrt((mdot - mdot_old).squaredNorm() / (mdot_old.squaredNorm() + 1E-14));
