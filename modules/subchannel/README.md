@@ -1,6 +1,6 @@
-sub_channel
+Subchannel
 =====
 
-"Fork sub_channel" to create a new MOOSE-based application.
+"Fork subchannel" to create a new MOOSE-based application.
 
 For more information see: [http://mooseframework.org/create-an-app/](http://mooseframework.org/create-an-app/)
