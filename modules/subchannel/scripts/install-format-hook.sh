@@ -1,9 +1,8 @@
 #!/bin/bash
 
-# This script installs a clang-format git pre-commit hook for Sockeye, which
-# formats all staged files with clang-format prior to a commit. This script
-# can be run from any directory. If the hook file already exists, an error
-# message will be printed.
+# This script installs a clang-format git pre-commit hook, which formats all staged files with
+# clang-format prior to a commit. This script can be run from any directory. If the hook file
+# already exists, an error message will be printed.
 
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 hookfile="$(cd $script_dir && git rev-parse --show-toplevel)/.git/hooks/pre-commit"
