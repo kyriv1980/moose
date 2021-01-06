@@ -33,11 +33,13 @@ SubChannel1PhaseProblem::SubChannel1PhaseProblem(const InputParameters & params)
   WijPrime.resize(_subchannel_mesh._n_gaps);
   Wij.resize(_subchannel_mesh._n_gaps);
   Wij_old.resize(_subchannel_mesh._n_gaps);
+  WijPrime_global.resize(_subchannel_mesh._n_gaps, _subchannel_mesh._nz + 1);
   Wij_global.resize(_subchannel_mesh._n_gaps, _subchannel_mesh._nz + 1);
   Wij_global_old.resize(_subchannel_mesh._n_gaps, _subchannel_mesh._nz + 1);
   Wij_global.setZero();
   Wij_global_old.setZero();
   WijPrime.setZero();
+  WijPrime_global.setZero();
 }
 
 void
@@ -112,6 +114,32 @@ SubChannel1PhaseProblem::converged()
   return true;
 }
 
+double
+SubChannel1PhaseProblem::computeFrictionFactor(double Re)
+{
+  double a, b;
+  if (Re < 1.0)
+  {
+    return 64.0;
+  }
+  else if (Re >= 1.0 && Re < 5000.0)
+  {
+    a = 64.0;
+    b = -1.0;
+  }
+  else if (Re >= 5000.0 && Re < 30000.0)
+  {
+    a = 0.316;
+    b = -0.25;
+  }
+  else
+  {
+    a = 0.184;
+    b = -0.20;
+  }
+  return a * std::pow(Re, b);
+}
+
 void
 SubChannel1PhaseProblem::computeWij(int iz)
 {
@@ -180,20 +208,25 @@ SubChannel1PhaseProblem::computeWij(int iz)
     while (newton_error > newton_tolerance && newton_cycles <= max_newton_cycles)
     {
       auto Re = std::abs(Wijguess / Sij) * Dh_ij / mu;
-      if (Re < 1)
+      if (Re < 1.0)
       {
-        b = -1.0;
-        a = 1e5;
+        a = 0.0;
+        b = 2.0; // doesn't matter in this case
       }
-      else if (Re >= 1.0 && Re < 4000)
+      else if (Re >= 1.0 && Re < 5000.0)
       {
-        b = 1.0;
         a = 64.0;
+        b = -1.0;
+      }
+      else if (Re >= 5000.0 && Re < 30000.0)
+      {
+        a = 0.316;
+        b = -0.25;
       }
       else
       {
-        b = 0.2;
         a = 0.184;
+        b = -0.20;
       }
       newton_cycles++;
       if (newton_cycles == max_newton_cycles)
@@ -201,9 +234,9 @@ SubChannel1PhaseProblem::computeWij(int iz)
         mooseError(
             name(), " CrossFlow Calculation didn't converge, newton_cycles: ", newton_cycles);
       }
-      auto fij = a * std::pow(Re, -b);
+      auto fij = computeFrictionFactor(Re);
       auto dRedW = Dh_ij / (Sij * mu);
-      auto dfijdW = -b * a * std::pow(Re, -b - 1.0) * dRedW;
+      auto dfijdW = b * a * std::pow(Re, b - 1.0) * dRedW;
       auto Kij = fij * Lij / Dh_ij + kij;
       auto dKijdW = (Lij / Dh_ij) * dfijdW;
       auto derivativeTerm = (Wijguess - std::abs(Wij_old(i_gap))) * Lij * Sij * rho_bar / dt();
@@ -228,6 +261,7 @@ SubChannel1PhaseProblem::computeWij(int iz)
     Wij(i_gap) = sign * Wijguess;
   }
   /// Update global Matrix
+  WijPrime_global.col(iz) = WijPrime;
   Wij_global.col(iz) = Wij;
 }
 
@@ -263,16 +297,17 @@ SubChannel1PhaseProblem::computeSumWij(double SumSumWij, int iz)
       // area of channel j
       auto Sj = (*S_flow_soln)(node_in_j);
       // apply local sign to crossflow
-      SumWij += _subchannel_mesh._sign_id_crossflow_map[i_ch][counter] * Wij(i_gap);
+      SumWij += _subchannel_mesh._sign_id_crossflow_map[i_ch][counter] * Wij_global(i_gap, iz);
       // take care of the sign by applying the map, use donor cell
-      SumWijh += _subchannel_mesh._sign_id_crossflow_map[i_ch][counter] * Wij(i_gap) *
+      SumWijh += _subchannel_mesh._sign_id_crossflow_map[i_ch][counter] * Wij_global(i_gap, iz) *
                  ((*h_soln)(node_in_i) + (*h_soln)(node_in_j) + (*h_soln)(node_out_i) +
                   (*h_soln)(node_out_j)) /
                  4.0;
-      SumWijPrimeDhij += WijPrime(i_gap) * (((*h_soln)(node_in) + (*h_soln)(node_out)) -
-                                            ((*h_soln)(node_in_j) + (*h_soln)(node_out_j)) / 2.0 -
-                                            ((*h_soln)(node_in_i) + (*h_soln)(node_out_i)) / 2.0);
-      SumWijPrimeDUij += WijPrime(i_gap) *
+      SumWijPrimeDhij +=
+          WijPrime_global(i_gap, iz) * (((*h_soln)(node_in) + (*h_soln)(node_out)) -
+                                        ((*h_soln)(node_in_j) + (*h_soln)(node_out_j)) / 2.0 -
+                                        ((*h_soln)(node_in_i) + (*h_soln)(node_out_i)) / 2.0);
+      SumWijPrimeDUij += WijPrime_global(i_gap, iz) *
                          (((*mdot_soln)(node_in) + (*mdot_soln)(node_out)) / rho / S -
                           ((*mdot_soln)(node_in_j) + (*mdot_soln)(node_out_j)) / 2.0 / rho_j / Sj -
                           ((*mdot_soln)(node_in_i) + (*mdot_soln)(node_out_i)) / 2.0 / rho_i / Si);
@@ -303,15 +338,53 @@ SubChannel1PhaseProblem::computeMdot(int iz)
     auto * node_out = _subchannel_mesh._nodes[i_ch][iz];
     // Copy the variables at the inlet (bottom) of this element.
     auto mdot_in = (*mdot_soln)(node_in);
-    auto h_in = (*h_soln)(node_in); // J/kg
     auto volume = dz * (*S_flow_soln)(node_in);
     auto mdot_out = 0.0;
-    auto h_out = 0.0;
     // Wij positive out of i into j;
     if (isTransient())
     {
       mdot_out = mdot_in - (*SumWij_soln)(node_out) -
                  ((*rho_soln)(node_in)-rho_soln->old(node_in)) * volume / dt();
+    }
+    else
+    {
+      mdot_out = mdot_in - (*SumWij_soln)(node_out);
+    }
+
+    if (mdot_out < 0)
+    {
+      _console << "Wij = : " << Wij << "\n";
+      mooseError(name(),
+                 " : Calculation of negative mass flow mdot_out = : ",
+                 mdot_out,
+                 " Axial Level= : ",
+                 iz);
+    }
+    // Update solution vectors
+    mdot_soln->set(node_out, mdot_out); // kg/sec
+  }
+}
+
+void
+SubChannel1PhaseProblem::computeEnthalpy(int iz)
+{
+  auto dz = _subchannel_mesh._z_grid[iz] - _subchannel_mesh._z_grid[iz - 1];
+  // go through the channels of the level.
+  for (unsigned int i_ch = 0; i_ch < _subchannel_mesh._n_channels; i_ch++)
+  {
+    // Start with applying mass-conservation equation & energy - conservation equation
+    // Find the nodes for the top and bottom of this element.
+    auto * node_in = _subchannel_mesh._nodes[i_ch][iz - 1];
+    auto * node_out = _subchannel_mesh._nodes[i_ch][iz];
+    // Copy the variables at the inlet (bottom) of this element.
+    auto mdot_in = (*mdot_soln)(node_in);
+    auto h_in = (*h_soln)(node_in); // J/kg
+    auto volume = dz * (*S_flow_soln)(node_in);
+    auto mdot_out = (*mdot_soln)(node_out);
+    auto h_out = 0.0;
+
+    if (isTransient())
+    {
       h_out = std::pow(mdot_out, -1) *
               (mdot_in * h_in - (*SumWijh_soln)(node_out) - (*SumWijPrimeDhij_soln)(node_out) +
                ((*q_prime_soln)(node_out) + (*q_prime_soln)(node_in)) * dz / 2.0 -
@@ -320,9 +393,7 @@ SubChannel1PhaseProblem::computeMdot(int iz)
     }
     else
     {
-      mdot_out = mdot_in - (*SumWij_soln)(node_out);
-      // note use of trapezoidal rule concistent with axial power rate calculation
-      // (PowerIC.C)
+      // note use of trapezoidal rule consistent with axial power rate calculation (PowerIC.C)
       h_out = std::pow(mdot_out, -1) *
               (mdot_in * h_in - (*SumWijh_soln)(node_out) - (*SumWijPrimeDhij_soln)(node_out) +
                ((*q_prime_soln)(node_out) + (*q_prime_soln)(node_in)) * dz / 2.0);
@@ -333,25 +404,24 @@ SubChannel1PhaseProblem::computeMdot(int iz)
       mooseError(
           name(), " : Calculation of negative Enthalpy h_out = : ", h_out, " Axial Level= : ", iz);
     }
-    if (mdot_out < 0)
-    {
-      _console << "Wij = : " << Wij << "\n";
-      mooseError(name(),
-                 " : Calculation of negative mass flow mdot_out = : ",
-                 mdot_out,
-                 " Axial Level= : ",
-                 iz);
-    }
-    auto T_out = _fp->T_from_p_h((*P_soln)(node_out), h_out);
-    auto rho_out = _fp->rho_from_p_T((*P_soln)(node_out), T_out);
     // Update the solution vectors at the outlet of the cell
-    // (mass,density,Temperature,Enthalpy is upwinded).
-    mdot_soln->set(node_out, mdot_out); // kg/sec
-    h_soln->set(node_out, h_out);       // J/kg
-    T_soln->set(node_out, T_out);       // Kelvin
-    rho_soln->set(node_out, rho_out);   // Kg/m3 (This line couples density)
+    h_soln->set(node_out, h_out); // J/kg
+  }
+}
+
+void
+SubChannel1PhaseProblem::computeProperties(int iz)
+{
+  for (unsigned int i_ch = 0; i_ch < _subchannel_mesh._n_channels; i_ch++)
+  {
+    // Find the nodes for the top and bottom of this element.
+    auto * node_in = _subchannel_mesh._nodes[i_ch][iz - 1];
+    auto * node_out = _subchannel_mesh._nodes[i_ch][iz];
+    auto T_out = _fp->T_from_p_h((*P_soln)(node_out), (*h_soln)(node_out));
+    auto rho_out = _fp->rho_from_p_T((*P_soln)(node_out), T_out);
+    T_soln->set(node_out, T_out);     // Kelvin
+    rho_soln->set(node_out, rho_out); // Kg/m3
     // Update the solution vectors at the inlet of the whole assembly.
-    // These values will be updated just 5 times depending on the bottom limiter value
     if (iz == 1)
     {
       h_soln->set(node_in, _fp->h_from_p_T((*P_soln)(node_in), (*T_soln)(node_in)));
@@ -402,7 +472,7 @@ SubChannel1PhaseProblem::computeDP(int iz)
     }
     auto mu = _fp->mu_from_rho_T(rho_i, T_i);
     auto Re = (((*mdot_soln)(node_in) / Si) * Dh_i / mu);
-    auto fi = 0.184 * std::pow(Re, -0.2);
+    auto fi = computeFrictionFactor(Re);
     auto Friction = (fi * dz / Dh_i) * 0.5 * (std::pow((*mdot_soln)(node_in), 2.0)) /
                     (std::pow(Si, 2.0) * rho_i); // Pa
     auto Gravity = _g_grav * rho_i * dz;         // Pa
@@ -477,9 +547,12 @@ SubChannel1PhaseProblem::externalSolve()
           // calculate Sum values per subchannel
           double SumSumWij = 0.0;
           computeSumWij(SumSumWij, iz);
-          // Calculate mass flow, enthalpy, density, Temperature using the mass and energy
-          // conseravation equations
+          // Calculate mass flowusing conservation equations
           computeMdot(iz);
+          // Calculate enthalpy using conservation equations
+          computeEnthalpy(iz);
+          // Calculate density, Temperature using the mass and energy calculated before
+          computeProperties(iz);
           // Calculate Error per level
           auto mdot_L2norm_new = mdot_soln->L2norm();
           MError = std::abs((mdot_L2norm_new - mdot_L2norm_old) / (mdot_L2norm_old + 1E-14));

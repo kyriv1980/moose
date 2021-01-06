@@ -24,14 +24,18 @@ public:
   void computeWij(int iz);
   void computeSumWij(double SumSumWij, int iz);
   void computeMdot(int iz);
+  void computeEnthalpy(int iz);
+  void computeProperties(int iz);
   void computeDP(int iz);
+  double computeFrictionFactor(double Re);
 
 protected:
+  Eigen::VectorXd Wij;
   Eigen::VectorXd Wij_old;
   Eigen::VectorXd WijPrime;
-  Eigen::MatrixXd Wij_global_old;
-  Eigen::VectorXd Wij;
   Eigen::MatrixXd Wij_global;
+  Eigen::MatrixXd Wij_global_old;
+  Eigen::MatrixXd WijPrime_global;
   const Real _g_grav;
   SubChannelMesh & _subchannel_mesh;
   const SinglePhaseFluidProperties * _fp;
