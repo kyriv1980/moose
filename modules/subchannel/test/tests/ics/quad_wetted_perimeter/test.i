@@ -1,5 +1,5 @@
 [Mesh]
-  type = SubChannelMesh
+  type = QuadSubChannelMesh
   nx = 3
   ny = 3
   max_dz = 2.
@@ -18,7 +18,7 @@
 
 [ICs]
   [w_perim_IC]
-    type = WettedPerimIC
+    type = QuadWettedPerimIC
     variable = w_perim
   []
 []

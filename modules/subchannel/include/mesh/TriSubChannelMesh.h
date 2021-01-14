@@ -1,12 +1,12 @@
 #pragma once
 
 #include <vector>
-#include "MooseMesh.h"
+#include "SubChannelMeshBase.h"
 
 /**
  * Mesh class for triangular, edge and corner subchannels for hexagonal lattice fuel assemblies
  */
-class TriSubChannelMesh : public MooseMesh
+class TriSubChannelMesh : public SubChannelMeshBase
 {
 public:
   TriSubChannelMesh(const InputParameters & parameters);
@@ -14,26 +14,59 @@ public:
   virtual std::unique_ptr<MooseMesh> safeClone() const override;
   virtual void buildMesh() override;
 
+  virtual const Real & getDuctToRodGap() const { return _duct_to_rod_gap; }
+
+  /**
+   * Return the number of rods
+   */
+  virtual const unsigned int & getNumOfRods() const { return _nrods; }
+
+  /**
+   * Return rod index given subchannel index and local neighbor index
+   */
+  virtual const unsigned int & getRodIndex(const unsigned int channel_idx,
+                                           const unsigned int neighbor_idx)
+  {
+    return _subchannel_to_rod_map[channel_idx][neighbor_idx];
+  }
+
+  virtual Node * getChannelNode(unsigned int i_chan, unsigned iz) const override
+  {
+    return _nodes[i_chan][iz];
+  }
+  virtual const unsigned int & getNumOfChannels() const override { return _n_channels; }
+  virtual const unsigned int & getNumOfGapsPerLayer() const override { return _n_gaps; }
+  virtual const std::pair<unsigned int, unsigned int> &
+  getGapNeighborChannels(unsigned int i_gap) const override
+  {
+    return _gap_to_chan_map[i_gap];
+  }
+  virtual const std::vector<unsigned int> & getChannelGaps(unsigned int i_chan) const override
+  {
+    return _chan_to_gap_map[i_chan];
+  }
+  virtual const std::vector<double> & getGapMap() const override { return _gij_map; }
+  virtual const Real & getCrossflowSign(unsigned int i_chan, unsigned int i_local) const override
+  {
+    return _sign_id_crossflow_map[i_chan][i_local];
+  }
+
+  virtual unsigned int getSubchannelIndexFromPoint(const Point & p) const override;
+
+  virtual EChannelType getSubchannelType(unsigned int index) const override
+  {
+    return _subch_type[index];
+  }
+
+  virtual Real getGapWidth(unsigned int gap_index) const override { return _gij_map[gap_index]; }
+
+protected:
   /// number of rings of fuel rods
   unsigned int _nrings;
-  /// number of axial nodes
-  unsigned int _nz;
   /// number of subchannels
   unsigned int _n_channels;
-  /// Distance between the neighbor fuel rods, pitch
-  Real _pitch;
-  /// fuel rod diameter
-  Real _rod_diameter;
   /// the distance between flat surfaces of the duct facing each other
   Real _flat_to_flat;
-  /// heated length of the fuel rod
-  Real _heated_length;
-  /// axial location of nodes
-  std::vector<Real> _z_grid;
-  /// axial location of the spacers
-  const std::vector<Real> & _spacer_z;
-  /// form loss coefficient of the spacers
-  const std::vector<Real> & _spacer_k;
   /// the gap thickness between the duct and peripheral fuel rods
   Real _duct_to_rod_gap;
   /// nodes
@@ -63,21 +96,10 @@ public:
   unsigned int _nrods;
   /// number of gaps
   unsigned int _n_gaps;
-  /// Enum for describing the center, edge and corner subchannels or gap types
-  enum ETriChannelType
-  {
-    CENTER,
-    EDGE,
-    CORNER
-  };
   /// subchannel type
-  std::vector<ETriChannelType> _subch_type;
+  std::vector<EChannelType> _subch_type;
   /// gap type
-  std::vector<ETriChannelType> _gap_type;
-
-protected:
-  /// max allowed axial node size
-  Real _max_dz;
+  std::vector<EChannelType> _gap_type;
 
 public:
   static InputParameters validParams();

@@ -4,7 +4,7 @@ mass_flux_in = ${fparse 1e+6 * 10.94 / 3600.}
 P_out = 14739394.95 # Pa
 
 [Mesh]
-  type = SubChannelMesh
+  type = QuadSubChannelMesh
   nx = 6
   ny = 6
   max_dz = 0.02
@@ -60,17 +60,17 @@ P_out = 14739394.95 # Pa
 
 [ICs]
   [S_IC]
-    type = FlowAreaIC
+    type = QuadFlowAreaIC
     variable = S
   []
 
   [w_perim_IC]
-    type = WettedPerimIC
+    type = QuadWettedPerimIC
     variable = w_perim
   []
 
   [q_prime_IC]
-    type = PowerIC
+    type = QuadPowerIC
     variable = q_prime
     power = 1.50e6 # W
     filename = "power_profile.txt" #type in name of file that describes power profile

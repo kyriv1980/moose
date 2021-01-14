@@ -1,5 +1,5 @@
 [Mesh]
-  type = SubChannelMesh
+  type = QuadSubChannelMesh
   nx = 3
   ny = 3
   max_dz = 2.
@@ -18,7 +18,7 @@
 
 [ICs]
   [q_prime_IC]
-    type = PowerIC
+    type = QuadPowerIC
     variable = q_prime
     power = 3.44e6 # W
     filename = "power_profile.txt" #type in name of file that describes power profile

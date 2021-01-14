@@ -1,5 +1,5 @@
 [Mesh]
-  type = SubChannelMesh
+  type = QuadSubChannelMesh
   nx = 3
   ny = 3
   max_dz = 2.
@@ -18,7 +18,7 @@
 
 [ICs]
   [S_IC]
-    type = FlowAreaIC
+    type = QuadFlowAreaIC
     variable = S
   []
 []
