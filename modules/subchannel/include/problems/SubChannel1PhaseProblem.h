@@ -21,13 +21,26 @@ public:
   virtual void syncSolutions(Direction direction) override;
   virtual bool converged() override;
   virtual void initialSetup() override;
+  /// Returns friction factor
+  double computeFF(double Re);
+  /// Computes diversion crossflow per gap for level iz
   void computeWij(int iz);
+  /// Computes net diversion crossflow per channel for level iz
   void computeSumWij(int iz);
+  /// Computes massflow per channel for level iz
   void computeMdot(int iz);
-  void computeEnthalpy(int iz);
-  void computeProperties(int iz);
+  /// Computes turbulent crossflow per gap for level iz
+  void computeWijPrime(int iz);
+  /// Computes Pressure Drop per channel for level iz
   void computeDP(int iz);
-  double computeFrictionFactor(double Re);
+  /// Computes Pressure per channel for level iz
+  void computeP(int iz);
+  /// Computes Enthalpy per channel for level iz
+  void computeH(int iz);
+  /// Computes Temperature per channel for level iz
+  void computeT(int iz);
+  /// Computes Density per channel for level iz
+  void computeRho(int iz);
 
 protected:
   Eigen::VectorXd Wij;
