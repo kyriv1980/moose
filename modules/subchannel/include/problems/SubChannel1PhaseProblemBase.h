@@ -48,13 +48,15 @@ protected:
   /// Computes and populates solution vector with Boundary mass flow
   virtual void enforceUniformDPDZAtInlet();
 
-  Eigen::VectorXd Wij;
-  Eigen::VectorXd Wij_old;
-  Eigen::VectorXd WijPrime;
-  Eigen::MatrixXd Wij_global;
-  Eigen::MatrixXd Wij_global_old;
-  Eigen::MatrixXd WijPrime_global;
+  Eigen::MatrixXd Wij;
+  Eigen::MatrixXd Wij_old;
+  Eigen::MatrixXd WijPrime;
   const Real _g_grav;
+  Real _one;
+  /// Flag that activates or deactivates the transient parts of the equations solved
+  Real _TR;
+  /// Time step
+  const Real & _dt;
   SubChannelMeshBase & _subchannel_mesh;
   /// Thermal diffusion coefficient used in turbulent crossflow
   const Real & _abeta;
