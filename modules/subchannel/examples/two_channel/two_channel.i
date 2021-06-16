@@ -1,19 +1,26 @@
-T_in = 359.15
-# [1e+6 kg/m^2-hour] turns into kg/m^2-sec
-mass_flux_in = ${fparse 1e+6 * 17.00 / 3600.}
-P_out = 4.923e6 # Pa
+T_in = 473.15 # K
+mass_flux_in = 3500 # kg /sec m2
+P_out = 155e+5 # Pa
 
 [Mesh]
-  type = QuadSubChannelMesh
-  nx = 6
-  ny = 6
-  max_dz = 0.02
+  type = BetterQuadSubChannelMesh
+  nx = 2
+  ny = 1
+  n_cells = 100
+  n_blocks = 1
   pitch = 0.0126
   rod_diameter = 0.00950
   gap = 0.00095 # the half gap between sub-channel assemblies
-  heated_length = 3.658
+  heated_length = 10.0
   spacer_z = '0 0.229 0.457 0.686 0.914 1.143 1.372 1.600 1.829 2.057 2.286 2.515 2.743 2.972 3.200 3.429'
   spacer_k = '0.7 0.4 1.0 0.4 1.0 0.4 1.0 0.4 1.0 0.4 1.0 0.4 1.0 0.4 1.0 0.4'
+[]
+
+[Functions]
+  [S_fn]
+    type = ParsedFunction
+    value = if(x>0.0,0.002,0.001)
+  []
 []
 
 [AuxVariables]
@@ -30,6 +37,8 @@ P_out = 4.923e6 # Pa
   [T]
   []
   [rho]
+  []
+  [mu]
   []
   [S]
   []
@@ -48,29 +57,34 @@ P_out = 4.923e6 # Pa
 []
 
 [Problem]
-  type = LiquidWaterSubChannel1PhaseProblem
+  type = BetterSubChannel1PhaseProblem
   fp = water
-  abeta = 0.08
-  CT = 1.0
+  beta = 0.006
+  CT = 0.0
   enforce_uniform_pressure = false
+  compute_density = true
+  compute_viscosity = true
+  compute_power = true
+  P_out = ${P_out}
 []
 
 [ICs]
-  [S_IC]
-    type = QuadFlowAreaIC
+  [S_ic]
+    type = FunctionIC
     variable = S
+    function = S_fn
   []
 
   [w_perim_IC]
-    type = QuadWettedPerimIC
+    type = ConstantIC
     variable = w_perim
+    value = 0.34188034
   []
 
   [q_prime_IC]
-    type = QuadPowerIC
+    type = ConstantIC
     variable = q_prime
-    power = 3.44e6 # W
-    filename = "power_profile.txt" #type in name of file that describes power profile
+    value = 0.0
   []
 
   [T_ic]
@@ -82,7 +96,7 @@ P_out = 4.923e6 # Pa
   [P_ic]
     type = ConstantIC
     variable = P
-    value = ${P_out}
+    value = 0.0
   []
 
   [DP_ic]
@@ -91,10 +105,18 @@ P_out = 4.923e6 # Pa
     value = 0.0
   []
 
+  [Viscosity_ic]
+    type = ViscosityIC
+    variable = mu
+    p = ${P_out}
+    T = T
+    fp = water
+  []
+
   [rho_ic]
     type = RhoFromPressureTemperatureIC
     variable = rho
-    p = P
+    p = ${P_out}
     T = T
     fp = water
   []
@@ -102,7 +124,7 @@ P_out = 4.923e6 # Pa
   [h_ic]
     type = SpecificEnthalpyFromPressureTemperatureIC
     variable = h
-    p = P
+    p = ${P_out}
     T = T
     fp = water
   []
@@ -115,13 +137,6 @@ P_out = 4.923e6 # Pa
 []
 
 [AuxKernels]
-  [P_out_bc]
-    type = ConstantAux
-    variable = P
-    boundary = outlet
-    value = ${P_out}
-    execute_on = 'timestep_begin'
-  []
   [T_in_bc]
     type = ConstantAux
     variable = T
@@ -142,21 +157,21 @@ P_out = 4.923e6 # Pa
 [Outputs]
   exodus = true
   [Temp_Out_MATRIX]
-    type = NormalSliceValues
+    type = BetterNormalSliceValues
     variable = T
     execute_on = final
     file_base = "Temp_Out.txt"
-    height = 3.658
+    height = 10.0
   []
   [mdot_Out_MATRIX]
-    type = NormalSliceValues
+    type = BetterNormalSliceValues
     variable = mdot
     execute_on = final
     file_base = "mdot_Out.txt"
-    height = 3.658
+    height = 10.0
   []
   [mdot_In_MATRIX]
-    type = NormalSliceValues
+    type = BetterNormalSliceValues
     variable = mdot
     execute_on = final
     file_base = "mdot_In.txt"
@@ -205,11 +220,11 @@ P_out = 4.923e6 # Pa
     variable = P
   []
   [xfer_DP]
-  type = MultiAppNearestNodeTransfer
-  multi_app = prettyMesh
-  direction = to_multiapp
-  source_variable = DP
-  variable = DP
+    type = MultiAppNearestNodeTransfer
+    multi_app = prettyMesh
+    direction = to_multiapp
+    source_variable = DP
+    variable = DP
   []
   [xfer_h]
     type = MultiAppNearestNodeTransfer
@@ -231,6 +246,13 @@ P_out = 4.923e6 # Pa
     direction = to_multiapp
     source_variable = rho
     variable = rho
+  []
+  [xfer_mu]
+    type = MultiAppNearestNodeTransfer
+    multi_app = prettyMesh
+    direction = to_multiapp
+    source_variable = mu
+    variable = mu
   []
   [xfer_q_prime]
     type = MultiAppNearestNodeTransfer
