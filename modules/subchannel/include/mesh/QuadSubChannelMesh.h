@@ -38,6 +38,10 @@ public:
   {
     return _pin_to_chan_map[i_pin];
   }
+  virtual const std::vector<unsigned int> & getChannelPins(unsigned int i_chan) const override
+  {
+    return _chan_to_pin_map[i_chan];
+  }
   virtual const std::vector<double> & getGapMap() const override { return _gij_map; }
   virtual const Real & getPitch() const override { return _pitch; }
   virtual const Real & getCrossflowSign(unsigned int i_chan, unsigned int i_local) const override
@@ -49,10 +53,9 @@ public:
   virtual const unsigned int & getNy() const override { return _ny; }
   const Real & getGap() const { return _gap; }
 
-  /**
-   * Return the index of the sub-channel for a given point
-   */
   unsigned int getSubchannelIndexFromPoint(const Point & p) const override;
+
+  unsigned int getPinIndexFromPoint(const Point & p) const override;
 
   virtual EChannelType getSubchannelType(unsigned int index) const override
   {
@@ -75,6 +78,7 @@ protected:
   std::vector<std::vector<Node *>> _gapnodes;
   std::vector<std::pair<unsigned int, unsigned int>> _gap_to_chan_map;
   std::vector<std::vector<unsigned int>> _chan_to_gap_map;
+  std::vector<std::vector<unsigned int>> _chan_to_pin_map;
   std::vector<std::vector<unsigned int>> _pin_to_chan_map;
   /// Matrix used to give local sign to crossflow quantities
   std::vector<std::vector<double>> _sign_id_crossflow_map;

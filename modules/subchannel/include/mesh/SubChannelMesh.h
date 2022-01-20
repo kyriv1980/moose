@@ -85,6 +85,11 @@ public:
   virtual const std::vector<unsigned int> & getPinChannels(unsigned int i_pin) const = 0;
 
   /**
+   * Return a vector of pin indices for a given channel index
+   */
+  virtual const std::vector<unsigned int> & getChannelPins(unsigned int i_pin) const = 0;
+
+  /**
    * Return a map with gap sizes
    */
   virtual const std::vector<double> & getGapMap() const = 0;
@@ -123,6 +128,11 @@ public:
    * Return a subchannel index for a given physical point `p`
    */
   virtual unsigned int getSubchannelIndexFromPoint(const Point & p) const = 0;
+
+  /**
+   * Return a pin index for a given physical point `p`
+   */
+  virtual unsigned int getPinIndexFromPoint(const Point & p) const = 0;
 
   /**
    * Return the type of the subchannel for given subchannel index
