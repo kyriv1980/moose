@@ -7,7 +7,7 @@ P_out = 2.0e5 # Pa
     type = TriSubChannelMeshGenerator
     nrings = 4
     n_cells = 100
-    flat_to_flat = 0.077
+    flat_to_flat = 0.085
     heated_length = 1.0
     rod_diameter = 0.01
     pitch = 0.012
@@ -15,6 +15,7 @@ P_out = 2.0e5 # Pa
     hwire = 0.0833
     spacer_z = '0 0.2 0.4 0.6 0.8'
     spacer_k = '0.1 0.1 0.1 0.1 0.10'
+    discretization = "central_difference"
   []
 []
 
@@ -64,8 +65,14 @@ P_out = 2.0e5 # Pa
   compute_density = true
   compute_viscosity = true
   compute_power = true
-#  P_tol = 1.0e-5
-#  T_tol = 1.0e-5
+  P_tol = 1.0e-6
+  T_tol = 1.0e-3
+  implicit = true
+  segregated = false
+  staggered_pressure = false
+  monolithic_thermal = false
+  verbose_multiapps = true
+  verbose_subchannel = false
 []
 
 [ICs]
@@ -169,3 +176,33 @@ P_out = 2.0e5 # Pa
   nl_rel_tol = 0.9
   l_tol = 0.9
 []
+
+################################################################################
+# A multiapp that projects data to a detailed mesh
+################################################################################
+
+[MultiApps]
+  [viz]
+    type = FullSolveMultiApp
+    input_files = "3d.i"
+    execute_on = "timestep_end"
+  []
+[]
+
+[Transfers]
+  [xfer]
+    type = MultiAppDetailedSolutionTransfer
+    to_multi_app = viz
+    variable = 'mdot SumWij P DP h T rho mu q_prime S'
+  []
+[]
+
+#[Transfers]
+#  [xfer]
+#    type = MultiAppNearestNodeTransfer
+#    #fixed_meshes = true
+#    to_multi_app = viz
+#    source_variable = mdot
+#    variable = mdot
+#  []
+#[]

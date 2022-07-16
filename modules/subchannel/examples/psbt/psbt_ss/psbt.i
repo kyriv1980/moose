@@ -8,7 +8,7 @@ P_out = 4.923e6 # Pa
     type = QuadSubChannelMeshGenerator
     nx = 6
     ny = 6
-    n_cells = 20
+    n_cells = 10
     pitch = 0.0126
     rod_diameter = 0.00950
     gap = 0.00095 # the half gap between sub-channel assemblies
@@ -29,13 +29,19 @@ P_out = 4.923e6 # Pa
 [SubChannel]
   type = LiquidWaterSubChannel1PhaseProblem
   fp = water
-  n_blocks = 1
+  n_blocks = 5
   beta = 0.006
-  CT = 2.0
-  compute_density = true
-  compute_viscosity = true
-  compute_power = true
+  CT = 1.0 #2.0
+  compute_density = false
+  compute_viscosity = false
+  compute_power = false
   P_out = ${P_out}
+# Change the defaults
+  implicit = true
+  segregated = true
+  staggered_pressure = false
+  monolithic_thermal = false
+  # P_tol = 1e-11
 []
 
 [ICs]
@@ -152,4 +158,25 @@ P_out = 4.923e6 # Pa
   type = Steady
   nl_rel_tol = 0.9
   l_tol = 0.9
+[]
+
+################################################################################
+# A multiapp that projects data to a detailed mesh
+################################################################################
+
+[MultiApps]
+  [viz]
+    type = FullSolveMultiApp
+    input_files = "3d.i"
+    execute_on = "timestep_end"
+  []
+[]
+
+[Transfers]
+  [xfer]
+    type = MultiAppDetailedSolutionTransfer
+    multi_app = viz
+    direction = to_multiapp
+    variable = 'mdot SumWij P DP h T rho mu q_prime S'
+  []
 []

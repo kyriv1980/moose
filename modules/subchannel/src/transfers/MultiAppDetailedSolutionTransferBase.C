@@ -24,6 +24,9 @@ MultiAppDetailedSolutionTransferBase::MultiAppDetailedSolutionTransferBase(
 void
 MultiAppDetailedSolutionTransferBase::execute()
 {
+  TIME_SECTION(
+      "MultiAppDetailedSolutionBaseTransfer::execute()", 5, "Transferring subchannel solutions");
+  _console << "********** Executing **********" << std::endl;
   getAppInfo();
 
   switch (_current_direction)
@@ -40,6 +43,7 @@ MultiAppDetailedSolutionTransferBase::execute()
 void
 MultiAppDetailedSolutionTransferBase::transferToMultiApps()
 {
+  _console << "********** Transfer to MultiApps a **********" << std::endl;
   mooseAssert(_from_meshes.size() == 1, "Only one master mesh can be active in this transfer.");
   if (dynamic_cast<SubChannelMesh *>(_from_meshes[0]) == nullptr)
     mooseError("This transfer works only with SubChannelMesh classes.");

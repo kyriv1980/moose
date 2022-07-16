@@ -66,6 +66,7 @@ QuadPinMeshGenerator::generate()
   std::unique_ptr<MeshBase> mesh_base = std::move(_input);
   if (!mesh_base)
     mesh_base = buildMeshBaseObject();
+  // BoundaryInfo & boundary_info = mesh_base->get_boundary_info();
   mesh_base->set_mesh_dimension(3);
   mesh_base->reserve_elem(_n_cells * (_ny - 1) * (_nx - 1));
   mesh_base->reserve_nodes((_n_cells + 1) * (_ny - 1) * (_nx - 1));
@@ -116,7 +117,6 @@ QuadPinMeshGenerator::generate()
       }
     }
   }
-
   mesh_base->subdomain_name(_block_id) = name();
   mesh_base->prepare_for_use();
 

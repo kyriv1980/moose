@@ -11,7 +11,7 @@ TriDuctMeshGenerator::validParams()
 {
   InputParameters params = MeshGenerator::validParams();
   params.addRequiredParam<MeshGeneratorName>("input", "The corresponding subchannel mesh");
-  params.addParam<unsigned int>("block_id", 1, "Domain Index");
+  params.addParam<unsigned int>("block_id", 2, "Domain Index");
   params.addRequiredParam<unsigned int>("n_cells", "The number of cells in the axial direction");
   params.addParam<Real>("unheated_length_entry", 0.0, "Unheated length at entry [m]");
   params.addRequiredParam<Real>("heated_length", "Heated length [m]");
@@ -64,6 +64,7 @@ TriDuctMeshGenerator::generate()
 
   std::shared_ptr<TriSubChannelMesh> sch_mesh = std::dynamic_pointer_cast<TriSubChannelMesh>(_mesh);
   sch_mesh->setChannelToDuctMaps(duct_nodes);
+  sch_mesh->_duct_mesh_exist = true;
 
   return mesh_base;
 }

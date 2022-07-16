@@ -15,9 +15,13 @@ public:
 
   virtual const unsigned int & getNumOfPins() const override { return _nrods; }
 
-  virtual Node * getPinNode(unsigned int, unsigned) const override { return nullptr; }
+  virtual Node * getPinNode(unsigned int i_pin, unsigned iz) const override
+  {
+    return _pin_nodes[i_pin][iz];
+  }
 
-  virtual bool pinMeshExist() const override { return false; }
+  virtual bool pinMeshExist() const override { return _pin_mesh_exist; }
+  virtual bool ductMeshExist() const override { return _duct_mesh_exist; }
 
   virtual const Real & getDuctToRodGap() const { return _duct_to_rod_gap; }
 
@@ -100,9 +104,35 @@ public:
   virtual unsigned int pinIndex(const Point & p) const override;
 
   /**
-   * Setup the internal maps when there is a outside duct present
+   * Function that gets the channel node from the duct node
    */
   void setChannelToDuctMaps(const std::vector<Node *> & duct_nodes);
+
+  virtual Node * getChanNodeFromDuct(Node * duct_node) override
+  {
+    return _duct_node_to_chan_map[duct_node];
+  }
+
+  /**
+   * Function that gets the duct node from the channel node
+   */
+  virtual Node * getDuctNodeFromChannel(Node * channel_node) override
+  {
+    return _chan_to_duct_node_map[channel_node];
+  }
+
+  /**
+   * Function that gets the channel node from the duct node
+   */
+  virtual Node * getChannelNodeFromDuct(Node * channel_node) override
+  {
+    return _duct_node_to_chan_map[channel_node];
+  }
+
+  /**
+   * Function that return the vector with the maps to the nodes
+   */
+  virtual const std::vector<Node *> getDuctNodes() const override { return _duct_nodes; }
 
 protected:
   /// number of rings of fuel rods
@@ -119,6 +149,8 @@ protected:
   Real _duct_to_rod_gap;
   /// nodes
   std::vector<std::vector<Node *>> _nodes;
+  /// pin nodes
+  std::vector<std::vector<Node *>> _pin_nodes;
 
   /// A list of all mesh nodes that form the (elements of) the hexagonal duct
   /// mesh that surrounds the rods/subchannels.
@@ -165,6 +197,10 @@ protected:
   std::vector<std::pair<unsigned int, unsigned int>> _chan_pairs_sf;
   /// TODO: channel indices corresponding to a given pin index
   std::vector<std::vector<unsigned int>> _pin_to_chan_map;
+  /// Flag that informs the solver whether there is a Pin Mesh or not
+  bool _pin_mesh_exist;
+  /// Flag that informs the solver whether there is a Duct Mesh or not
+  bool _duct_mesh_exist;
 
 public:
   static InputParameters validParams();
@@ -179,6 +215,9 @@ public:
   rodPositions(std::vector<Point> & positions, unsigned int nrings, Real pitch, Point center);
 
   friend class TriSubChannelMeshGenerator;
+  friend class TriDuctMeshGenerator;
+  friend class TriPinMeshGenerator;
+  friend class DetailedTriPinMeshGenerator;
 
   /// number of corners in the duct x-sec
   static const unsigned int N_CORNERS = 6;

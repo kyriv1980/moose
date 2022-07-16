@@ -79,20 +79,27 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
                ": The number of subchannels cannot be less than 2 in both directions (x and y). "
                "Smallest assembly allowed is either 2X1 or 1X2. ");
 
+  // Defining the total length from 3 axial sections
   Real L = _unheated_length_entry + _heated_length + _unheated_length_exit;
+
+  // Defining the dz based in the total length and the specified number of axial cells
   Real dz = L / _n_cells;
   for (unsigned int i = 0; i < _n_cells + 1; i++)
     _z_grid.push_back(dz * i);
 
+  // Defining the position of the spacer grid in the numerical solution array
   std::vector<int> spacer_cell;
   for (const auto & elem : _spacer_z)
     spacer_cell.emplace_back(std::round(elem * _n_cells / L));
 
+  // Defining the array for axial resistances
   _k_grid.resize(_n_cells + 1, 0.0);
 
+  // Summing the spacer resistance to the grid resistance array
   for (unsigned int index = 0; index < spacer_cell.size(); index++)
     _k_grid[spacer_cell[index]] += _spacer_k[index];
 
+  // Defining the size of the maps
   _gap_to_chan_map.resize(_n_gaps);
   _gapnodes.resize(_n_gaps);
   _chan_to_gap_map.resize(_n_channels);
@@ -100,9 +107,12 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
   _pin_to_chan_map.resize(_n_pins);
   _sign_id_crossflow_map.resize(_n_channels);
   _gij_map.resize(_n_gaps);
-  double possitive_flow = 1.0;
+
+  // Defining the signs for positive and negative flows
+  double positive_flow = 1.0;
   double negative_flow = -1.0;
 
+  // Defining the subchannel types
   _subch_type.resize(_n_channels);
   for (unsigned int iy = 0; iy < _ny; iy++)
   {
@@ -133,7 +143,7 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
       _gap_to_chan_map[i_gap] = {i_ch, j_ch};
       _chan_to_gap_map[i_ch].push_back(i_gap);
       _chan_to_gap_map[j_ch].push_back(i_gap);
-      _sign_id_crossflow_map[i_ch].push_back(possitive_flow);
+      _sign_id_crossflow_map[i_ch].push_back(positive_flow);
       _sign_id_crossflow_map[j_ch].push_back(negative_flow);
 
       // make a gap size map
@@ -155,7 +165,7 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
       _gap_to_chan_map[i_gap] = {i_ch, j_ch};
       _chan_to_gap_map[i_ch].push_back(i_gap);
       _chan_to_gap_map[j_ch].push_back(i_gap);
-      _sign_id_crossflow_map[i_ch].push_back(possitive_flow);
+      _sign_id_crossflow_map[i_ch].push_back(positive_flow);
       _sign_id_crossflow_map[j_ch].push_back(negative_flow);
 
       // make a gap size map

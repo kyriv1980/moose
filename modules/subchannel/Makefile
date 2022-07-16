@@ -36,10 +36,11 @@ FUNCTIONAL_EXPANSION_TOOLS  := no
 HEAT_CONDUCTION             := yes
 LEVEL_SET                   := no
 MISC                        := no
-NAVIER_STOKES               := no
+NAVIER_STOKES               := yes
 PHASE_FIELD                 := no
 POROUS_FLOW                 := no
 RDG                         := no
+REACTOR						          := yes
 RICHARDS                    := no
 SOLID_MECHANICS             := no
 STOCHASTIC_TOOLS            := no
@@ -89,7 +90,7 @@ APPLICATION_DIR    := $(CURDIR)
 APPLICATION_NAME   := subchannel
 BUILD_EXEC         := yes
 GEN_REVISION       := no
-ADDITIONAL_CPPFLAGS += -Wall -Wextra -Werror
+ADDITIONAL_CPPFLAGS += -Wall -Wextra
 include            $(FRAMEWORK_DIR)/app.mk
 
 ###############################################################################
