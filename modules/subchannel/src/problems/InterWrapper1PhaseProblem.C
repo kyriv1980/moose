@@ -1098,6 +1098,7 @@ InterWrapper1PhaseProblem::computeDP(int iblock)
     MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     // Matrix
+#if !PETSC_VERSION_LESS_THAN(3, 15, 0)
     MatAXPY(amc_sys_mdot_mat, 1.0, amc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
     MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
@@ -1108,6 +1109,18 @@ InterWrapper1PhaseProblem::computeDP(int iblock)
     //    MatAssemblyBegin(amc_sys_mdot_mat,MAT_FINAL_ASSEMBLY);
     //    MatAssemblyEnd(amc_sys_mdot_mat,MAT_FINAL_ASSEMBLY);
     MatAXPY(amc_sys_mdot_mat, 1.0, amc_friction_force_mat, UNKNOWN_NONZERO_PATTERN);
+#else
+    MatAXPY(amc_sys_mdot_mat, 1.0, amc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(amc_sys_mdot_mat, 1.0, amc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    //    MatAXPY(amc_sys_mdot_mat, 1.0, amc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    //    MatAssemblyBegin(amc_sys_mdot_mat,MAT_FINAL_ASSEMBLY);
+    //    MatAssemblyEnd(amc_sys_mdot_mat,MAT_FINAL_ASSEMBLY);
+    MatAXPY(amc_sys_mdot_mat, 1.0, amc_friction_force_mat, DIFFERENT_NONZERO_PATTERN);
+#endif
     MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     _console << "Block: " << iblock << " - Linear momentum conservation matrix assembled"
@@ -1723,6 +1736,7 @@ InterWrapper1PhaseProblem::computeh(int iblock)
     MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     // Matrix
+#if !PETSC_VERSION_LESS_THAN(3, 15, 0)
     MatAXPY(hc_sys_h_mat, 1.0, hc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
     MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
@@ -1730,6 +1744,15 @@ InterWrapper1PhaseProblem::computeh(int iblock)
     MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     MatAXPY(hc_sys_h_mat, 1.0, hc_cross_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+#else
+    MatAXPY(hc_sys_h_mat, 1.0, hc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(hc_sys_h_mat, 1.0, hc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(hc_sys_h_mat, 1.0, hc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+#endif
     MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     _console << "Block: " << iblock << " - Enthalpy conservation matrix assembled" << std::endl;
@@ -2098,6 +2121,7 @@ InterWrapper1PhaseProblem::computeWij(int iblock)
     MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     // Matrix
+#if !PETSC_VERSION_LESS_THAN(3, 15, 0)
     MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
     MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
@@ -2105,6 +2129,15 @@ InterWrapper1PhaseProblem::computeWij(int iblock)
     MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_friction_force_mat, UNKNOWN_NONZERO_PATTERN);
+#else
+    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_friction_force_mat, DIFFERENT_NONZERO_PATTERN);
+#endif
     MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     _console << "Block: " << iblock << " - Cross flow system matrix assembled" << std::endl;
@@ -2532,7 +2565,12 @@ InterWrapper1PhaseProblem::implicitPetscSolve(int iblock)
     // VecView(sumWij_loc, PETSC_VIEWER_STDOUT_WORLD);
     PetscScalar max_value;
     // VecMax(sumWij_loc, NULL, &max_value);
+#if !PETSC_VERSION_LESS_THAN(3, 16, 0)
     VecMean(sumWij_loc, &max_value);
+#else
+    VecSum(sumWij_loc, &max_value);
+    max_value /= _block_size * _n_channels;
+#endif
     _console << "Max val: " << max_value << std::endl;
 
     Vec Wij_new_loc, Wij_old_loc;
@@ -2547,7 +2585,12 @@ InterWrapper1PhaseProblem::implicitPetscSolve(int iblock)
     VecAXPY(Wij_new_loc, -1.0, Wij_old_loc);
     PetscScalar loc_sum_vec;
     VecAbs(Wij_new_loc);
+#if !PETSC_VERSION_LESS_THAN(3, 16, 0)
     VecMean(Wij_new_loc, &loc_sum_vec);
+#else
+    VecSum(Wij_new_loc, &loc_sum_vec);
+    loc_sum_vec /= _block_size * _n_gaps;
+#endif
     max_value *= (std::exp(100 * loc_sum_vec) - 1.0);
 
     // VecView(sol_holder_P, PETSC_VIEWER_STDOUT_WORLD);
@@ -2827,7 +2870,13 @@ InterWrapper1PhaseProblem::implicitPetscSolve(int iblock)
     CHKERRQ(ierr);
     PetscScalar relax_factor;
     VecAbs(_Wij_loc_vec);
+#if !PETSC_VERSION_LESS_THAN(3, 16, 0)
     VecMean(_Wij_loc_vec, &relax_factor);
+#else
+    VecSum(_Wij_loc_vec, &relax_factor);
+    relax_factor /= _block_size * _n_gaps;
+#endif
+
     relax_factor = relax_factor / max_sumWij + 0.5;
     _console << "Relax base value: " << relax_factor << std::endl;
 
