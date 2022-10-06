@@ -140,56 +140,57 @@ SubChannel1PhaseProblem::SubChannel1PhaseProblem(const InputParameters & params)
   _converged = true;
 
   // Mass conservation components
-  createPetscMatrix(mc_sumWij_mat, _block_size * _n_channels, _block_size * _n_gaps);
-  createPetscVector(Wij_vec, _block_size * _n_gaps);
-  createPetscVector(prod, _block_size * _n_channels);
-  createPetscVector(prodp, _block_size * _n_channels);
-  createPetscMatrix(mc_axial_convection_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(mc_axial_convection_rhs, _block_size * _n_channels);
+  createPetscMatrix(_mc_sumWij_mat, _block_size * _n_channels, _block_size * _n_gaps);
+  createPetscVector(_Wij_vec, _block_size * _n_gaps);
+  createPetscVector(_prod, _block_size * _n_channels);
+  createPetscVector(_prodp, _block_size * _n_channels);
+  createPetscMatrix(_mc_axial_convection_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_mc_axial_convection_rhs, _block_size * _n_channels);
 
   // Axial momentum conservation components
   createPetscMatrix(
-      amc_turbulent_cross_flows_mat, _block_size * _n_gaps, _block_size * _n_channels);
-  createPetscVector(amc_turbulent_cross_flows_rhs, _block_size * _n_gaps);
-  createPetscMatrix(amc_time_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(amc_time_derivative_rhs, _block_size * _n_channels);
+      _amc_turbulent_cross_flows_mat, _block_size * _n_gaps, _block_size * _n_channels);
+  createPetscVector(_amc_turbulent_cross_flows_rhs, _block_size * _n_gaps);
+  createPetscMatrix(_amc_time_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_amc_time_derivative_rhs, _block_size * _n_channels);
   createPetscMatrix(
-      amc_advective_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(amc_advective_derivative_rhs, _block_size * _n_channels);
-  createPetscMatrix(amc_cross_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(amc_cross_derivative_rhs, _block_size * _n_channels);
-  createPetscMatrix(amc_friction_force_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(amc_friction_force_rhs, _block_size * _n_channels);
-  createPetscVector(amc_gravity_rhs, _block_size * _n_channels);
-  createPetscMatrix(amc_pressure_force_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(amc_pressure_force_rhs, _block_size * _n_channels);
-  createPetscMatrix(amc_sys_mdot_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(amc_sys_mdot_rhs, _block_size * _n_channels);
+      _amc_advective_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_amc_advective_derivative_rhs, _block_size * _n_channels);
+  createPetscMatrix(
+      _amc_cross_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_amc_cross_derivative_rhs, _block_size * _n_channels);
+  createPetscMatrix(_amc_friction_force_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_amc_friction_force_rhs, _block_size * _n_channels);
+  createPetscVector(_amc_gravity_rhs, _block_size * _n_channels);
+  createPetscMatrix(_amc_pressure_force_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_amc_pressure_force_rhs, _block_size * _n_channels);
+  createPetscMatrix(_amc_sys_mdot_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_amc_sys_mdot_rhs, _block_size * _n_channels);
 
   // Lateral momentum conservation components
-  createPetscMatrix(cmc_time_derivative_mat, _block_size * _n_gaps, _block_size * _n_gaps);
-  createPetscVector(cmc_time_derivative_rhs, _block_size * _n_gaps);
-  createPetscMatrix(cmc_advective_derivative_mat, _block_size * _n_gaps, _block_size * _n_gaps);
-  createPetscVector(cmc_advective_derivative_rhs, _block_size * _n_gaps);
-  createPetscMatrix(cmc_friction_force_mat, _block_size * _n_gaps, _block_size * _n_gaps);
-  createPetscVector(cmc_friction_force_rhs, _block_size * _n_gaps);
-  createPetscMatrix(cmc_pressure_force_mat, _block_size * _n_gaps, _block_size * _n_channels);
-  createPetscVector(cmc_pressure_force_rhs, _block_size * _n_gaps);
-  createPetscMatrix(cmc_sys_Wij_mat, _block_size * _n_gaps, _block_size * _n_gaps);
-  createPetscVector(cmc_sys_Wij_rhs, _block_size * _n_gaps);
-  createPetscVector(cmc_Wij_channel_dummy, _block_size * _n_channels);
+  createPetscMatrix(_cmc_time_derivative_mat, _block_size * _n_gaps, _block_size * _n_gaps);
+  createPetscVector(_cmc_time_derivative_rhs, _block_size * _n_gaps);
+  createPetscMatrix(_cmc_advective_derivative_mat, _block_size * _n_gaps, _block_size * _n_gaps);
+  createPetscVector(_cmc_advective_derivative_rhs, _block_size * _n_gaps);
+  createPetscMatrix(_cmc_friction_force_mat, _block_size * _n_gaps, _block_size * _n_gaps);
+  createPetscVector(_cmc_friction_force_rhs, _block_size * _n_gaps);
+  createPetscMatrix(_cmc_pressure_force_mat, _block_size * _n_gaps, _block_size * _n_channels);
+  createPetscVector(_cmc_pressure_force_rhs, _block_size * _n_gaps);
+  createPetscMatrix(_cmc_sys_Wij_mat, _block_size * _n_gaps, _block_size * _n_gaps);
+  createPetscVector(_cmc_sys_Wij_rhs, _block_size * _n_gaps);
+  createPetscVector(_cmc_Wij_channel_dummy, _block_size * _n_channels);
 
   // Energy conservation components
-  createPetscMatrix(hc_time_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(hc_time_derivative_rhs, _block_size * _n_channels);
+  createPetscMatrix(_hc_time_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_time_derivative_rhs, _block_size * _n_channels);
   createPetscMatrix(
-      hc_advective_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(hc_advective_derivative_rhs, _block_size * _n_channels);
-  createPetscMatrix(hc_cross_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(hc_cross_derivative_rhs, _block_size * _n_channels);
-  createPetscVector(hc_added_heat_rhs, _block_size * _n_channels);
-  createPetscMatrix(hc_sys_h_mat, _block_size * _n_channels, _block_size * _n_channels);
-  createPetscVector(hc_sys_h_rhs, _block_size * _n_channels);
+      _hc_advective_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_advective_derivative_rhs, _block_size * _n_channels);
+  createPetscMatrix(_hc_cross_derivative_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_cross_derivative_rhs, _block_size * _n_channels);
+  createPetscVector(_hc_added_heat_rhs, _block_size * _n_channels);
+  createPetscMatrix(_hc_sys_h_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_sys_h_rhs, _block_size * _n_channels);
 }
 
 void
@@ -237,10 +238,10 @@ SubChannel1PhaseProblem::~SubChannel1PhaseProblem()
     delete _q_prime_duct_soln;
     delete _Tduct_soln;
   }
-  //  MatDestroy(&mc_sumWij_mat);
-  //  VecDestroy(&Wij_vec);
+  //  MatDestroy(&_mc_sumWij_mat);
+  //  VecDestroy(&_Wij_vec);
   //  VecDestroy(&prod);
-  //  KSPDestroy(&mc_axial_convection_ksp);
+  //  KSPDestroy(&_mc_axial_convection_ksp);
 }
 
 bool
@@ -338,7 +339,30 @@ SubChannel1PhaseProblem::populateVectorFromDense(Vec & x,
   CHKERRQ(ierr);
   return 0;
 }
-
+// template <class T>
+// PetscErrorCode
+// SubChannel1PhaseProblem::populateDenseFromVector(const Vec & x,
+//                                                  T & loc_solution,
+//                                                  const unsigned int first_axial_level,
+//                                                  const unsigned int last_axial_level,
+//                                                  const unsigned int cross_dimension)
+// {
+//   PetscErrorCode ierr;
+//   PetscScalar * xx;
+//   ierr = VecGetArray(x, &xx);
+//   CHKERRQ(ierr);
+//   for (unsigned int iz = first_axial_level; iz < last_axial_level + 1; iz++)
+//   {
+//     unsigned int iz_ind = iz - first_axial_level;
+//     for (unsigned int i_l = 0; i_l < cross_dimension; i_l++)
+//     {
+//       loc_solution(i_l, iz) = xx[iz_ind * cross_dimension + i_l];
+//     }
+//   }
+//   ierr = VecRestoreArray(x, &xx);
+//   CHKERRQ(ierr);
+//   return 0;
+// }
 template <class T>
 PetscErrorCode
 SubChannel1PhaseProblem::populateVectorFromHandle(Vec & x,
@@ -488,21 +512,23 @@ SubChannel1PhaseProblem::computeSumWij(int iblock)
         {
           PetscInt row = i_ch + _n_channels * iz_ind;
           PetscInt col = i_gap + _n_gaps * iz_ind;
-          PetscScalar value = 1.0 * _subchannel_mesh.getCrossflowSign(i_ch, counter);
-          MatSetValues(mc_sumWij_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+          PetscScalar value = _subchannel_mesh.getCrossflowSign(i_ch, counter);
+          MatSetValues(_mc_sumWij_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
           counter++;
         }
       }
     }
-    MatAssemblyBegin(mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
     if (_segregated_bool)
     {
       Vec loc_prod;
-      VecDuplicate(amc_sys_mdot_rhs, &loc_prod);
+      Vec loc_Wij;
+      VecDuplicate(_amc_sys_mdot_rhs, &loc_prod);
+      VecDuplicate(_Wij_vec, &loc_Wij);
       populateVectorFromDense<libMesh::DenseMatrix<Real>>(
-          Wij_vec, _Wij, first_node, last_node, _n_gaps);
-      MatMult(mc_sumWij_mat, Wij_vec, loc_prod);
+          loc_Wij, _Wij, first_node, last_node + 1, _n_gaps);
+      MatMult(_mc_sumWij_mat, loc_Wij, loc_prod);
       PetscScalar * xx;
       VecGetArray(loc_prod, &xx);
       for (unsigned int iz = first_node; iz < last_node + 1; iz++)
@@ -516,6 +542,7 @@ SubChannel1PhaseProblem::computeSumWij(int iblock)
         }
       }
       VecDestroy(&loc_prod);
+      VecDestroy(&loc_Wij);
     }
   }
 }
@@ -569,28 +596,28 @@ SubChannel1PhaseProblem::computeMdot(int iblock)
         auto time_term = _TR * ((*_rho_soln)(node_out)-_rho_soln->old(node_out)) * volume / _dt;
         PetscInt row_vec = i_ch + _n_channels * iz_ind;
         PetscScalar value_vec = -1.0 * time_term;
-        VecSetValues(mc_axial_convection_rhs, 1, &row_vec, &value_vec, INSERT_VALUES);
+        VecSetValues(_mc_axial_convection_rhs, 1, &row_vec, &value_vec, INSERT_VALUES);
 
         // Imposing bottom boundary condition or adding of diagonal elements
         if (iz == first_node)
         {
           PetscScalar value_vec = (*_mdot_soln)(node_in);
           PetscInt row_vec = i_ch + _n_channels * iz_ind;
-          VecSetValues(mc_axial_convection_rhs, 1, &row_vec, &value_vec, ADD_VALUES);
+          VecSetValues(_mc_axial_convection_rhs, 1, &row_vec, &value_vec, ADD_VALUES);
         }
         else
         {
           PetscInt row = i_ch + _n_channels * iz_ind;
           PetscInt col = i_ch + _n_channels * (iz_ind - 1);
           PetscScalar value = -1.0;
-          MatSetValues(mc_axial_convection_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+          MatSetValues(_mc_axial_convection_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
         }
 
         // Adding diagonal elements
         PetscInt row = i_ch + _n_channels * iz_ind;
         PetscInt col = i_ch + _n_channels * iz_ind;
         PetscScalar value = 1.0;
-        MatSetValues(mc_axial_convection_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+        MatSetValues(_mc_axial_convection_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
 
         // Adding cross flows RHS
         if (_segregated_bool)
@@ -598,12 +625,12 @@ SubChannel1PhaseProblem::computeMdot(int iblock)
           PetscScalar value_vec_2 = -1.0 * (*_SumWij_soln)(node_out);
           // PetscScalar value_vec_2 = -1.0 * (*_SumWij_soln)(node_in);
           PetscInt row_vec_2 = i_ch + _n_channels * iz_ind;
-          VecSetValues(mc_axial_convection_rhs, 1, &row_vec_2, &value_vec_2, ADD_VALUES);
+          VecSetValues(_mc_axial_convection_rhs, 1, &row_vec_2, &value_vec_2, ADD_VALUES);
         }
       }
     }
-    MatAssemblyBegin(mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
     if (_verbose_subchannel)
       _console << "Block: " << iblock << " - Mass conservation matrix assembled" << std::endl;
 
@@ -612,14 +639,14 @@ SubChannel1PhaseProblem::computeMdot(int iblock)
       KSP ksploc;
       PC pc;
       Vec sol;
-      VecDuplicate(mc_axial_convection_rhs, &sol);
+      VecDuplicate(_mc_axial_convection_rhs, &sol);
       KSPCreate(PETSC_COMM_WORLD, &ksploc);
-      KSPSetOperators(ksploc, mc_axial_convection_mat, mc_axial_convection_mat);
+      KSPSetOperators(ksploc, _mc_axial_convection_mat, _mc_axial_convection_mat);
       KSPGetPC(ksploc, &pc);
       PCSetType(pc, PCJACOBI);
       KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
       KSPSetFromOptions(ksploc);
-      KSPSolve(ksploc, mc_axial_convection_rhs, sol);
+      KSPSolve(ksploc, _mc_axial_convection_rhs, sol);
       PetscScalar * xx;
       VecGetArray(sol, &xx);
       for (unsigned int iz = first_node; iz < last_node + 1; iz++)
@@ -632,7 +659,7 @@ SubChannel1PhaseProblem::computeMdot(int iblock)
           _mdot_soln->set(node_out, value);
         }
       }
-      VecZeroEntries(mc_axial_convection_rhs);
+      VecZeroEntries(_mc_axial_convection_rhs);
       KSPDestroy(&ksploc);
       VecDestroy(&sol);
     }
@@ -705,42 +732,49 @@ SubChannel1PhaseProblem::computeWijPrime(int iblock)
           PetscScalar value_tl = -1.0 * base_value / (Si_in + Sj_in) *
                                  ((*_mdot_soln)(node_in_i) + (*_mdot_soln)(node_in_j));
           PetscInt row = i_gap + _n_gaps * iz_ind;
-          VecSetValues(amc_turbulent_cross_flows_rhs, 1, &row, &value_tl, INSERT_VALUES);
+          VecSetValues(_amc_turbulent_cross_flows_rhs, 1, &row, &value_tl, INSERT_VALUES);
         }
         else
         {
           PetscScalar value_tl = base_value / (Si_in + Sj_in);
           PetscInt row = i_gap + _n_gaps * iz_ind;
 
-          PetscInt col_ich = i_ch + _n_channels * iz_ind;
+          PetscInt col_ich = i_ch + _n_channels * (iz_ind - 1);
           MatSetValues(
-              amc_turbulent_cross_flows_mat, 1, &row, 1, &col_ich, &value_tl, INSERT_VALUES);
+              _amc_turbulent_cross_flows_mat, 1, &row, 1, &col_ich, &value_tl, INSERT_VALUES);
 
-          PetscInt col_jch = j_ch + _n_channels * iz_ind;
+          PetscInt col_jch = j_ch + _n_channels * (iz_ind - 1);
           MatSetValues(
-              amc_turbulent_cross_flows_mat, 1, &row, 1, &col_jch, &value_tl, INSERT_VALUES);
+              _amc_turbulent_cross_flows_mat, 1, &row, 1, &col_jch, &value_tl, INSERT_VALUES);
         }
 
         // Top values
         PetscScalar value_bl = base_value / (Si_out + Sj_out);
         PetscInt row = i_gap + _n_gaps * iz_ind;
 
-        PetscInt col_ich = i_ch + _n_channels * (iz_ind + 1);
-        MatSetValues(amc_turbulent_cross_flows_mat, 1, &row, 1, &col_ich, &value_bl, INSERT_VALUES);
+        PetscInt col_ich = i_ch + _n_channels * iz_ind;
+        MatSetValues(
+            _amc_turbulent_cross_flows_mat, 1, &row, 1, &col_ich, &value_bl, INSERT_VALUES);
 
-        PetscInt col_jch = j_ch + _n_channels * (iz_ind + 1);
-        MatSetValues(amc_turbulent_cross_flows_mat, 1, &row, 1, &col_jch, &value_bl, INSERT_VALUES);
+        PetscInt col_jch = j_ch + _n_channels * iz_ind;
+        MatSetValues(
+            _amc_turbulent_cross_flows_mat, 1, &row, 1, &col_jch, &value_bl, INSERT_VALUES);
       }
     }
-    MatAssemblyBegin(amc_turbulent_cross_flows_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_turbulent_cross_flows_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_amc_turbulent_cross_flows_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_turbulent_cross_flows_mat, MAT_FINAL_ASSEMBLY);
     if (_segregated_bool)
     {
+      Vec loc_prod;
+      Vec loc_Wij;
+      VecDuplicate(_amc_sys_mdot_rhs, &loc_prod);
+      VecDuplicate(_Wij_vec, &loc_Wij);
       populateVectorFromHandle<SolutionHandle *>(
-          prod, _mdot_soln, first_node, last_node, _n_channels);
-      MatMult(amc_turbulent_cross_flows_mat, prod, Wij_vec);
+          loc_prod, _mdot_soln, first_node, last_node, _n_channels);
+      MatMult(_amc_turbulent_cross_flows_mat, loc_prod, loc_Wij);
+      VecAXPY(loc_Wij, -1.0, _amc_turbulent_cross_flows_rhs);
       PetscScalar * xx;
-      VecGetArray(Wij_vec, &xx);
+      VecGetArray(loc_Wij, &xx);
       for (unsigned int iz = first_node; iz < last_node + 1; iz++)
       {
         auto iz_ind = iz - first_node;
@@ -749,6 +783,8 @@ SubChannel1PhaseProblem::computeWijPrime(int iblock)
           _WijPrime(i_gap, iz) = xx[iz_ind * _n_gaps + i_gap];
         }
       }
+      VecDestroy(&loc_prod);
+      VecDestroy(&loc_Wij);
     }
   }
 }
@@ -833,17 +869,17 @@ SubChannel1PhaseProblem::computeDP(int iblock)
   }
   else
   {
-    MatZeroEntries(amc_time_derivative_mat);
-    MatZeroEntries(amc_advective_derivative_mat);
-    MatZeroEntries(amc_cross_derivative_mat);
-    MatZeroEntries(amc_friction_force_mat);
-    VecZeroEntries(amc_time_derivative_rhs);
-    VecZeroEntries(amc_advective_derivative_rhs);
-    VecZeroEntries(amc_cross_derivative_rhs);
-    VecZeroEntries(amc_friction_force_rhs);
-    VecZeroEntries(amc_gravity_rhs);
-    MatZeroEntries(amc_sys_mdot_mat);
-    VecZeroEntries(amc_sys_mdot_rhs);
+    MatZeroEntries(_amc_time_derivative_mat);
+    MatZeroEntries(_amc_advective_derivative_mat);
+    MatZeroEntries(_amc_cross_derivative_mat);
+    MatZeroEntries(_amc_friction_force_mat);
+    VecZeroEntries(_amc_time_derivative_rhs);
+    VecZeroEntries(_amc_advective_derivative_rhs);
+    VecZeroEntries(_amc_cross_derivative_rhs);
+    VecZeroEntries(_amc_friction_force_rhs);
+    VecZeroEntries(_amc_gravity_rhs);
+    MatZeroEntries(_amc_sys_mdot_mat);
+    VecZeroEntries(_amc_sys_mdot_rhs);
 
     for (unsigned int iz = first_node; iz < last_node + 1; iz++)
     {
@@ -889,35 +925,35 @@ SubChannel1PhaseProblem::computeDP(int iblock)
         {
           PetscScalar value_vec_tt = -1.0 * _TR * alpha * (*_mdot_soln)(node_in)*dz / _dt;
           PetscInt row_vec_tt = i_ch + _n_channels * iz_ind;
-          VecSetValues(amc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
+          VecSetValues(_amc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
         }
         else
         {
           PetscInt row_tt = i_ch + _n_channels * iz_ind;
           PetscInt col_tt = i_ch + _n_channels * (iz_ind - 1);
           PetscScalar value_tt = _TR * alpha * dz / _dt;
-          MatSetValues(amc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
+          MatSetValues(_amc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
         }
 
         // Adding diagonal elements
         PetscInt row_tt = i_ch + _n_channels * iz_ind;
         PetscInt col_tt = i_ch + _n_channels * iz_ind;
         PetscScalar value_tt = _TR * (1.0 - alpha) * dz / _dt;
-        MatSetValues(amc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
+        MatSetValues(_amc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
 
         // Adding RHS elements
         PetscScalar mdot_old_interp = computeInterpolatedValue(
             _mdot_soln->old(node_out), _mdot_soln->old(node_in), "central_difference", Pe);
         PetscScalar value_vec_tt = _TR * mdot_old_interp * dz / _dt;
         PetscInt row_vec_tt = i_ch + _n_channels * iz_ind;
-        VecSetValues(amc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
+        VecSetValues(_amc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
 
         /// Advective derivative term
         if (iz == first_node)
         {
           PetscScalar value_vec_at = std::pow((*_mdot_soln)(node_in), 2.0) / (S_in * rho_in);
           PetscInt row_vec_at = i_ch + _n_channels * iz_ind;
-          VecSetValues(amc_advective_derivative_rhs, 1, &row_vec_at, &value_vec_at, ADD_VALUES);
+          VecSetValues(_amc_advective_derivative_rhs, 1, &row_vec_at, &value_vec_at, ADD_VALUES);
         }
         else
         {
@@ -925,7 +961,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
           PetscInt col_at = i_ch + _n_channels * (iz_ind - 1);
           PetscScalar value_at = -1.0 * (*_mdot_soln)(node_in) / (S_in * rho_in);
           MatSetValues(
-              amc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+              _amc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
         }
 
         // Adding diagonal elements
@@ -933,7 +969,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
         PetscInt col_at = i_ch + _n_channels * iz_ind;
         PetscScalar value_at = (*_mdot_soln)(node_out) / (S_out * rho_out);
         MatSetValues(
-            amc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+            _amc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
 
         /// Cross derivative term
         unsigned int counter = 0;
@@ -966,7 +1002,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
                                          _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                          _Wij(i_gap, cross_index) * u_star;
               PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
-              VecSetValues(amc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+              VecSetValues(_amc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
             }
             else
             {
@@ -974,14 +1010,15 @@ SubChannel1PhaseProblem::computeDP(int iblock)
                                      _Wij(i_gap, cross_index) / S_i / rho_i;
               PetscInt row_ct = i_ch + _n_channels * iz_ind;
               PetscInt col_ct = ii_ch + _n_channels * (iz_ind - 1);
-              MatSetValues(amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+              MatSetValues(
+                  _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
             }
             PetscScalar value_ct = (1.0 - alpha) *
                                    _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                    _Wij(i_gap, cross_index) / S_i / rho_i;
             PetscInt row_ct = i_ch + _n_channels * iz_ind;
             PetscInt col_ct = ii_ch + _n_channels * iz_ind;
-            MatSetValues(amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+            MatSetValues(_amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
           }
           else if (_Wij(i_gap, cross_index) < 0.0) // _Wij=0 operations not necessary
           {
@@ -992,7 +1029,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
                                          _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                          _Wij(i_gap, cross_index) * u_star;
               PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
-              VecSetValues(amc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+              VecSetValues(_amc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
             }
             else
             {
@@ -1000,72 +1037,72 @@ SubChannel1PhaseProblem::computeDP(int iblock)
                                      _Wij(i_gap, cross_index) / S_j / rho_j;
               PetscInt row_ct = i_ch + _n_channels * iz_ind;
               PetscInt col_ct = jj_ch + _n_channels * (iz_ind - 1);
-              MatSetValues(amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+              MatSetValues(
+                  _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
             }
             PetscScalar value_ct = (1.0 - alpha) *
                                    _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                    _Wij(i_gap, cross_index) / S_j / rho_j;
             PetscInt row_ct = i_ch + _n_channels * iz_ind;
             PetscInt col_ct = jj_ch + _n_channels * iz_ind;
-            MatSetValues(amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+            MatSetValues(_amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
           }
 
           if (iz == first_node)
           {
-            PetscScalar value_vec_ct = -2.0 * alpha *
-                                       (*_mdot_soln)(node_in)*_WijPrime(i_gap, cross_index) /
-                                       (rho_interp * S_interp);
-            value_vec_ct =
-                alpha * (*_mdot_soln)(node_in_j)*_WijPrime(i_gap, cross_index) / (rho_j * S_j);
-            value_vec_ct +=
-                alpha * (*_mdot_soln)(node_in_i)*_WijPrime(i_gap, cross_index) / (rho_i * S_i);
+            PetscScalar value_vec_ct = -2.0 * alpha * (*_mdot_soln)(node_in)*_CT *
+                                       _WijPrime(i_gap, cross_index) / (rho_interp * S_interp);
+            value_vec_ct += alpha * (*_mdot_soln)(node_in_j)*_CT * _WijPrime(i_gap, cross_index) /
+                            (rho_j * S_j);
+            value_vec_ct += alpha * (*_mdot_soln)(node_in_i)*_CT * _WijPrime(i_gap, cross_index) /
+                            (rho_i * S_i);
             PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
-            VecSetValues(amc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+            VecSetValues(_amc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
           }
           else
           {
             PetscScalar value_center_ct =
-                2.0 * alpha * _WijPrime(i_gap, cross_index) / (rho_interp * S_interp);
+                2.0 * alpha * _CT * _WijPrime(i_gap, cross_index) / (rho_interp * S_interp);
             PetscInt row_ct = i_ch + _n_channels * iz_ind;
             PetscInt col_ct = i_ch + _n_channels * (iz_ind - 1);
             MatSetValues(
-                amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
+                _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
 
             PetscScalar value_left_ct =
-                -1.0 * alpha * _WijPrime(i_gap, cross_index) / (rho_j * S_j);
+                -1.0 * alpha * _CT * _WijPrime(i_gap, cross_index) / (rho_j * S_j);
             row_ct = i_ch + _n_channels * iz_ind;
             col_ct = jj_ch + _n_channels * (iz_ind - 1);
             MatSetValues(
-                amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
+                _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
 
             PetscScalar value_right_ct =
-                -1.0 * alpha * _WijPrime(i_gap, cross_index) / (rho_i * S_i);
+                -1.0 * alpha * _CT * _WijPrime(i_gap, cross_index) / (rho_i * S_i);
             row_ct = i_ch + _n_channels * iz_ind;
             col_ct = ii_ch + _n_channels * (iz_ind - 1);
             MatSetValues(
-                amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
+                _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
           }
 
           PetscScalar value_center_ct =
-              2.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index) / (rho_interp * S_interp);
+              2.0 * (1.0 - alpha) * _CT * _WijPrime(i_gap, cross_index) / (rho_interp * S_interp);
           PetscInt row_ct = i_ch + _n_channels * iz_ind;
           PetscInt col_ct = i_ch + _n_channels * iz_ind;
           MatSetValues(
-              amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
+              _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
 
           PetscScalar value_left_ct =
-              -1.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index) / (rho_j * S_j);
+              -1.0 * (1.0 - alpha) * _CT * _WijPrime(i_gap, cross_index) / (rho_j * S_j);
           row_ct = i_ch + _n_channels * iz_ind;
           col_ct = jj_ch + _n_channels * iz_ind;
           MatSetValues(
-              amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
+              _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
 
           PetscScalar value_right_ct =
-              -1.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index) / (rho_i * S_i);
+              -1.0 * (1.0 - alpha) * _CT * _WijPrime(i_gap, cross_index) / (rho_i * S_i);
           row_ct = i_ch + _n_channels * iz_ind;
           col_ct = ii_ch + _n_channels * iz_ind;
           MatSetValues(
-              amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
+              _amc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
 
           counter++;
         }
@@ -1082,86 +1119,86 @@ SubChannel1PhaseProblem::computeDP(int iblock)
         {
           PetscScalar value_vec = -1.0 * alpha * coef * (*_mdot_soln)(node_in);
           PetscInt row_vec = i_ch + _n_channels * iz_ind;
-          VecSetValues(amc_friction_force_rhs, 1, &row_vec, &value_vec, ADD_VALUES);
+          VecSetValues(_amc_friction_force_rhs, 1, &row_vec, &value_vec, ADD_VALUES);
         }
         else
         {
           PetscInt row = i_ch + _n_channels * iz_ind;
           PetscInt col = i_ch + _n_channels * (iz_ind - 1);
           PetscScalar value = alpha * coef;
-          MatSetValues(amc_friction_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+          MatSetValues(_amc_friction_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
         }
 
         // Adding diagonal elements
         PetscInt row = i_ch + _n_channels * iz_ind;
         PetscInt col = i_ch + _n_channels * iz_ind;
         PetscScalar value = (1.0 - alpha) * coef;
-        MatSetValues(amc_friction_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+        MatSetValues(_amc_friction_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
 
         /// Gravity force
         PetscScalar value_vec = -1.0 * _g_grav * rho_interp * dz * S_interp;
         PetscInt row_vec = i_ch + _n_channels * iz_ind;
-        VecSetValues(amc_gravity_rhs, 1, &row_vec, &value_vec, ADD_VALUES);
+        VecSetValues(_amc_gravity_rhs, 1, &row_vec, &value_vec, ADD_VALUES);
       }
     }
     /// Assembling system
-    MatZeroEntries(amc_sys_mdot_mat);
-    VecZeroEntries(amc_sys_mdot_rhs);
-    MatAssemblyBegin(amc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(amc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(amc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(amc_friction_force_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_friction_force_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatZeroEntries(_amc_sys_mdot_mat);
+    VecZeroEntries(_amc_sys_mdot_rhs);
+    MatAssemblyBegin(_amc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_amc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_amc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_amc_friction_force_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_friction_force_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     // Matrix
 #if !PETSC_VERSION_LESS_THAN(3, 15, 0)
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_cross_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_friction_force_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_cross_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_friction_force_mat, UNKNOWN_NONZERO_PATTERN);
 #else
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(amc_sys_mdot_mat, 1.0, amc_friction_force_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_amc_sys_mdot_mat, 1.0, _amc_friction_force_mat, DIFFERENT_NONZERO_PATTERN);
 #endif
-    MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     if (_verbose_subchannel)
       _console << "Block: " << iblock << " - Linear momentum conservation matrix assembled"
                << std::endl;
     // RHS
-    VecAXPY(amc_sys_mdot_rhs, 1.0, amc_time_derivative_rhs);
-    VecAXPY(amc_sys_mdot_rhs, 1.0, amc_advective_derivative_rhs);
-    VecAXPY(amc_sys_mdot_rhs, 1.0, amc_cross_derivative_rhs);
-    VecAXPY(amc_sys_mdot_rhs, 1.0, amc_friction_force_rhs);
-    VecAXPY(amc_sys_mdot_rhs, 1.0, amc_gravity_rhs);
+    VecAXPY(_amc_sys_mdot_rhs, 1.0, _amc_time_derivative_rhs);
+    VecAXPY(_amc_sys_mdot_rhs, 1.0, _amc_advective_derivative_rhs);
+    VecAXPY(_amc_sys_mdot_rhs, 1.0, _amc_cross_derivative_rhs);
+    VecAXPY(_amc_sys_mdot_rhs, 1.0, _amc_friction_force_rhs);
+    VecAXPY(_amc_sys_mdot_rhs, 1.0, _amc_gravity_rhs);
 
     if (_segregated_bool)
     {
       // Assembly the matrix system
       populateVectorFromHandle<SolutionHandle *>(
-          prod, _mdot_soln, first_node, last_node, _n_channels);
+          _prod, _mdot_soln, first_node, last_node, _n_channels);
       Vec ls;
-      VecDuplicate(amc_sys_mdot_rhs, &ls);
-      MatMult(amc_sys_mdot_mat, prod, ls);
-      VecAXPY(ls, -1.0, amc_sys_mdot_rhs);
+      VecDuplicate(_amc_sys_mdot_rhs, &ls);
+      MatMult(_amc_sys_mdot_mat, _prod, ls);
+      VecAXPY(ls, -1.0, _amc_sys_mdot_rhs);
       PetscScalar * xx;
       VecGetArray(ls, &xx);
       for (unsigned int iz = first_node; iz < last_node + 1; iz++)
@@ -1181,7 +1218,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
           // Setting solutions
           if (S_interp != 0)
           {
-            auto DP = std::pow(S_interp, 0.0) * xx[iz_ind * _n_channels + i_ch];
+            auto DP = std::pow(S_interp, -1.0) * xx[iz_ind * _n_channels + i_ch];
             _DP_soln->set(node_out, DP);
           }
           else
@@ -1192,6 +1229,77 @@ SubChannel1PhaseProblem::computeDP(int iblock)
         }
       }
       VecDestroy(&ls);
+
+      // for (unsigned int iz = first_node; iz < last_node + 1; iz++)
+      // {
+      //   auto k_grid = _subchannel_mesh.getKGrid();
+      //   auto dz = _z_grid[iz] - _z_grid[iz - 1];
+      //   for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+      //   {
+      //     auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+      //     auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
+      //     auto rho_in = (*_rho_soln)(node_in);
+      //     auto rho_out = (*_rho_soln)(node_out);
+      //     auto mu_in = (*_mu_soln)(node_in);
+      //     auto S = (*_S_flow_soln)(node_in);
+      //     auto w_perim = (*_w_perim_soln)(node_in);
+      //     // hydraulic diameter in the i direction
+      //     auto Dh_i = 4.0 * S / w_perim;
+      //     auto time_term = _TR * ((*_mdot_soln)(node_out)-_mdot_soln->old(node_out)) * dz / _dt -
+      //                      dz * 2.0 * (*_mdot_soln)(node_out) *
+      //                          (rho_out - _rho_soln->old(node_out)) / rho_in / _dt;
+
+      //     auto mass_term1 =
+      //         std::pow((*_mdot_soln)(node_out), 2.0) * (1.0 / S / rho_out - 1.0 / S / rho_in);
+      //     auto mass_term2 = -2.0 * (*_mdot_soln)(node_out) * (*_SumWij_soln)(node_out) / S /
+      //     rho_in;
+
+      //     auto crossflow_term = 0.0;
+      //     auto turbulent_term = 0.0;
+
+      //     unsigned int counter = 0;
+      //     for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
+      //     {
+      //       auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+      //       unsigned int ii_ch = chans.first;
+      //       unsigned int jj_ch = chans.second;
+      //       auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
+      //       auto * node_in_j = _subchannel_mesh.getChannelNode(jj_ch, iz - 1);
+      //       auto * node_out_i = _subchannel_mesh.getChannelNode(ii_ch, iz);
+      //       auto * node_out_j = _subchannel_mesh.getChannelNode(jj_ch, iz);
+      //       auto rho_i = (*_rho_soln)(node_in_i);
+      //       auto rho_j = (*_rho_soln)(node_in_j);
+      //       auto Si = (*_S_flow_soln)(node_in_i);
+      //       auto Sj = (*_S_flow_soln)(node_in_j);
+      //       auto u_star = 0.0;
+      //       // figure out donor axial velocity
+      //       if (_Wij(i_gap, iz) > 0.0)
+      //         u_star = (*_mdot_soln)(node_out_i) / Si / rho_i;
+      //       else
+      //         u_star = (*_mdot_soln)(node_out_j) / Sj / rho_j;
+
+      //       crossflow_term +=
+      //           _subchannel_mesh.getCrossflowSign(i_ch, counter) * _Wij(i_gap, iz) * u_star;
+
+      //       turbulent_term += _WijPrime(i_gap, iz) * (2 * (*_mdot_soln)(node_out) / rho_in / S -
+      //                                                 (*_mdot_soln)(node_out_j) / Sj / rho_j -
+      //                                                 (*_mdot_soln)(node_out_i) / Si / rho_i);
+      //       counter++;
+      //     }
+      //     turbulent_term *= _CT;
+
+      //     auto Re = (((*_mdot_soln)(node_in) / S) * Dh_i / mu_in);
+      //     auto fi = computeFrictionFactor(Re);
+      //     auto ki = k_grid[iz - 1];
+      //     auto friction_term = (fi * dz / Dh_i + ki) * 0.5 *
+      //                          (std::pow((*_mdot_soln)(node_out), 2.0)) /
+      //                          (S * (*_rho_soln)(node_out));
+      //     auto gravity_term = _g_grav * (*_rho_soln)(node_out)*dz * S;
+      //     auto DP = std::pow(S, -1.0) * (time_term + mass_term1 + mass_term2 + crossflow_term +
+      //                                    turbulent_term + friction_term + gravity_term); // Pa
+      //     _DP_soln->set(node_out, DP);
+      //   }
+      // }
     }
   }
 }
@@ -1251,7 +1359,7 @@ SubChannel1PhaseProblem::computeP(int iblock)
   {
     if (!_staggered_pressure_bool)
     {
-      VecZeroEntries(amc_pressure_force_rhs);
+      VecZeroEntries(_amc_pressure_force_rhs);
       for (unsigned int iz = last_node; iz > first_node - 1; iz--)
       {
         auto iz_ind = iz - first_node;
@@ -1270,48 +1378,49 @@ SubChannel1PhaseProblem::computeP(int iblock)
           PetscInt row = i_ch + _n_channels * iz_ind;
           PetscInt col = i_ch + _n_channels * iz_ind;
           PetscScalar value = -1.0 * S_interp;
-          MatSetValues(amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+          MatSetValues(_amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
 
           if (iz == last_node)
           {
             PetscScalar value = -1.0 * (*_P_soln)(node_out)*S_interp;
             PetscInt row = i_ch + _n_channels * iz_ind;
-            VecSetValues(amc_pressure_force_rhs, 1, &row, &value, ADD_VALUES);
+            VecSetValues(_amc_pressure_force_rhs, 1, &row, &value, ADD_VALUES);
           }
           else
           {
             PetscInt row = i_ch + _n_channels * iz_ind;
             PetscInt col = i_ch + _n_channels * (iz_ind + 1);
             PetscScalar value = 1.0 * S_interp;
-            MatSetValues(amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+            MatSetValues(_amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
           }
 
           if (_segregated_bool)
           {
             auto dp_out = (*_DP_soln)(node_out);
-            PetscScalar value_v = -1.0 * dp_out;
+            PetscScalar value_v = -1.0 * dp_out * S_interp;
+            ;
             PetscInt row_v = i_ch + _n_channels * iz_ind;
-            VecSetValues(amc_pressure_force_rhs, 1, &row_v, &value_v, ADD_VALUES);
+            VecSetValues(_amc_pressure_force_rhs, 1, &row_v, &value_v, ADD_VALUES);
           }
         }
       }
       // Solving pressure problem
-      MatAssemblyBegin(amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+      MatAssemblyBegin(_amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(_amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
 
       if (_segregated_bool)
       {
         KSP ksploc;
         PC pc;
         Vec sol;
-        VecDuplicate(amc_pressure_force_rhs, &sol);
+        VecDuplicate(_amc_pressure_force_rhs, &sol);
         KSPCreate(PETSC_COMM_WORLD, &ksploc);
-        KSPSetOperators(ksploc, amc_pressure_force_mat, amc_pressure_force_mat);
+        KSPSetOperators(ksploc, _amc_pressure_force_mat, _amc_pressure_force_mat);
         KSPGetPC(ksploc, &pc);
         PCSetType(pc, PCJACOBI);
         KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
         KSPSetFromOptions(ksploc);
-        KSPSolve(ksploc, amc_pressure_force_rhs, sol);
+        KSPSolve(ksploc, _amc_pressure_force_rhs, sol);
         PetscScalar * xx;
         VecGetArray(sol, &xx);
         // update Pressure solution
@@ -1325,14 +1434,14 @@ SubChannel1PhaseProblem::computeP(int iblock)
             _P_soln->set(node_in, value);
           }
         }
-        VecZeroEntries(amc_pressure_force_rhs);
+        VecZeroEntries(_amc_pressure_force_rhs);
         KSPDestroy(&ksploc);
         VecDestroy(&sol);
       }
     }
     else
     {
-      VecZeroEntries(amc_pressure_force_rhs);
+      VecZeroEntries(_amc_pressure_force_rhs);
       for (unsigned int iz = last_node; iz > first_node - 1; iz--)
       {
         auto iz_ind = iz - first_node;
@@ -1351,41 +1460,41 @@ SubChannel1PhaseProblem::computeP(int iblock)
           PetscInt row = i_ch + _n_channels * iz_ind;
           PetscInt col = i_ch + _n_channels * iz_ind;
           PetscScalar value = -1.0 * S_interp;
-          MatSetValues(amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+          MatSetValues(_amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
 
           if (iz == last_node)
           {
             PetscScalar value = -1.0 * (*_P_soln)(node_out)*S_interp;
             PetscInt row = i_ch + _n_channels * iz_ind;
-            VecSetValues(amc_pressure_force_rhs, 1, &row, &value, ADD_VALUES);
+            VecSetValues(_amc_pressure_force_rhs, 1, &row, &value, ADD_VALUES);
 
             auto dp_out = (*_DP_soln)(node_out);
             PetscScalar value_v = -1.0 * dp_out / 2.0 * S_interp;
             PetscInt row_v = i_ch + _n_channels * iz_ind;
-            VecSetValues(amc_pressure_force_rhs, 1, &row_v, &value_v, ADD_VALUES);
+            VecSetValues(_amc_pressure_force_rhs, 1, &row_v, &value_v, ADD_VALUES);
           }
           else
           {
             PetscInt row = i_ch + _n_channels * iz_ind;
             PetscInt col = i_ch + _n_channels * (iz_ind + 1);
             PetscScalar value = 1.0 * S_interp;
-            MatSetValues(amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
+            MatSetValues(_amc_pressure_force_mat, 1, &row, 1, &col, &value, INSERT_VALUES);
 
             if (_segregated_bool)
             {
               auto dp_in = (*_DP_soln)(node_in);
               auto dp_out = (*_DP_soln)(node_out);
               auto dp_interp = computeInterpolatedValue(dp_out, dp_in, "central_difference");
-              PetscScalar value_v = -1.0 * dp_interp;
+              PetscScalar value_v = -1.0 * dp_interp * S_interp;
               PetscInt row_v = i_ch + _n_channels * iz_ind;
-              VecSetValues(amc_pressure_force_rhs, 1, &row_v, &value_v, ADD_VALUES);
+              VecSetValues(_amc_pressure_force_rhs, 1, &row_v, &value_v, ADD_VALUES);
             }
           }
         }
       }
       // Solving pressure problem
-      MatAssemblyBegin(amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
-      MatAssemblyEnd(amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+      MatAssemblyBegin(_amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+      MatAssemblyEnd(_amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
       if (_verbose_subchannel)
         _console << "Block: " << iblock << " - Axial momentum pressure force matrix assembled"
                  << std::endl;
@@ -1395,14 +1504,14 @@ SubChannel1PhaseProblem::computeP(int iblock)
         KSP ksploc;
         PC pc;
         Vec sol;
-        VecDuplicate(amc_pressure_force_rhs, &sol);
+        VecDuplicate(_amc_pressure_force_rhs, &sol);
         KSPCreate(PETSC_COMM_WORLD, &ksploc);
-        KSPSetOperators(ksploc, amc_pressure_force_mat, amc_pressure_force_mat);
+        KSPSetOperators(ksploc, _amc_pressure_force_mat, _amc_pressure_force_mat);
         KSPGetPC(ksploc, &pc);
         PCSetType(pc, PCJACOBI);
         KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
         KSPSetFromOptions(ksploc);
-        KSPSolve(ksploc, amc_pressure_force_rhs, sol);
+        KSPSolve(ksploc, _amc_pressure_force_rhs, sol);
         PetscScalar * xx;
         VecGetArray(sol, &xx);
         // update Pressure solution
@@ -1416,7 +1525,7 @@ SubChannel1PhaseProblem::computeP(int iblock)
             _P_soln->set(node_in, value);
           }
         }
-        VecZeroEntries(amc_pressure_force_rhs);
+        VecZeroEntries(_amc_pressure_force_rhs);
         KSPDestroy(&ksploc);
         VecDestroy(&sol);
       }
@@ -1532,15 +1641,15 @@ SubChannel1PhaseProblem::computeh(int iblock)
   else
   {
 
-    MatZeroEntries(hc_time_derivative_mat);
-    MatZeroEntries(hc_advective_derivative_mat);
-    MatZeroEntries(hc_cross_derivative_mat);
-    VecZeroEntries(hc_time_derivative_rhs);
-    VecZeroEntries(hc_advective_derivative_rhs);
-    VecZeroEntries(hc_cross_derivative_rhs);
-    VecZeroEntries(hc_added_heat_rhs);
-    MatZeroEntries(hc_sys_h_mat);
-    VecZeroEntries(hc_sys_h_rhs);
+    MatZeroEntries(_hc_time_derivative_mat);
+    MatZeroEntries(_hc_advective_derivative_mat);
+    MatZeroEntries(_hc_cross_derivative_mat);
+    VecZeroEntries(_hc_time_derivative_rhs);
+    VecZeroEntries(_hc_advective_derivative_rhs);
+    VecZeroEntries(_hc_cross_derivative_rhs);
+    VecZeroEntries(_hc_added_heat_rhs);
+    MatZeroEntries(_hc_sys_h_mat);
+    VecZeroEntries(_hc_sys_h_rhs);
 
     for (unsigned int iz = first_node; iz < last_node + 1; iz++)
     {
@@ -1564,21 +1673,21 @@ SubChannel1PhaseProblem::computeh(int iblock)
           PetscScalar value_vec_tt =
               -1.0 * _TR * alpha * (*_rho_soln)(node_in) * (*_h_soln)(node_in)*volume / _dt;
           PetscInt row_vec_tt = i_ch + _n_channels * iz_ind;
-          VecSetValues(hc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
+          VecSetValues(_hc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
         }
         else
         {
           PetscInt row_tt = i_ch + _n_channels * iz_ind;
           PetscInt col_tt = i_ch + _n_channels * (iz_ind - 1);
           PetscScalar value_tt = _TR * alpha * (*_rho_soln)(node_in)*volume / _dt;
-          MatSetValues(hc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
+          MatSetValues(_hc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
         }
 
         // Adding diagonal elements
         PetscInt row_tt = i_ch + _n_channels * iz_ind;
         PetscInt col_tt = i_ch + _n_channels * iz_ind;
         PetscScalar value_tt = _TR * (1.0 - alpha) * (*_rho_soln)(node_out)*volume / _dt;
-        MatSetValues(hc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
+        MatSetValues(_hc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
 
         // Adding RHS elements
         PetscScalar rho_old_interp = computeInterpolatedValue(
@@ -1588,14 +1697,14 @@ SubChannel1PhaseProblem::computeh(int iblock)
 
         PetscScalar value_vec_tt = _TR * rho_old_interp * h_old_interp * volume / _dt;
         PetscInt row_vec_tt = i_ch + _n_channels * iz_ind;
-        VecSetValues(hc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
+        VecSetValues(_hc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
 
         /// Advective derivative term
         if (iz == first_node)
         {
           PetscScalar value_vec_at = (*_mdot_soln)(node_in) * (*_h_soln)(node_in);
           PetscInt row_vec_at = i_ch + _n_channels * iz_ind;
-          VecSetValues(hc_advective_derivative_rhs, 1, &row_vec_at, &value_vec_at, ADD_VALUES);
+          VecSetValues(_hc_advective_derivative_rhs, 1, &row_vec_at, &value_vec_at, ADD_VALUES);
         }
         else
         {
@@ -1603,14 +1712,15 @@ SubChannel1PhaseProblem::computeh(int iblock)
           PetscInt col_at = i_ch + _n_channels * (iz_ind - 1);
           PetscScalar value_at = -1.0 * (*_mdot_soln)(node_in);
           MatSetValues(
-              hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+              _hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
         }
 
         // Adding diagonal elements
         PetscInt row_at = i_ch + _n_channels * iz_ind;
         PetscInt col_at = i_ch + _n_channels * iz_ind;
         PetscScalar value_at = (*_mdot_soln)(node_out);
-        MatSetValues(hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+        MatSetValues(
+            _hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
 
         /// Cross derivative term
         unsigned int counter = 0;
@@ -1634,7 +1744,7 @@ SubChannel1PhaseProblem::computeh(int iblock)
                                          _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                          _Wij(i_gap, cross_index) * h_star;
               PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
-              VecSetValues(hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+              VecSetValues(_hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
             }
             else
             {
@@ -1642,14 +1752,14 @@ SubChannel1PhaseProblem::computeh(int iblock)
                                      _Wij(i_gap, cross_index);
               PetscInt row_ct = i_ch + _n_channels * iz_ind;
               PetscInt col_ct = ii_ch + _n_channels * (iz_ind - 1);
-              MatSetValues(hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+              MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
             }
             PetscScalar value_ct = (1.0 - alpha) *
                                    _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                    _Wij(i_gap, cross_index);
             PetscInt row_ct = i_ch + _n_channels * iz_ind;
             PetscInt col_ct = ii_ch + _n_channels * iz_ind;
-            MatSetValues(hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+            MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
           }
           else if (_Wij(i_gap, cross_index) < 0.0) // _Wij=0 operations not necessary
           {
@@ -1660,7 +1770,7 @@ SubChannel1PhaseProblem::computeh(int iblock)
                                          _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                          _Wij(i_gap, cross_index) * h_star;
               PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
-              VecSetValues(hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+              VecSetValues(_hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
             }
             else
             {
@@ -1668,14 +1778,14 @@ SubChannel1PhaseProblem::computeh(int iblock)
                                      _Wij(i_gap, cross_index);
               PetscInt row_ct = i_ch + _n_channels * iz_ind;
               PetscInt col_ct = jj_ch + _n_channels * (iz_ind - 1);
-              MatSetValues(hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+              MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
             }
             PetscScalar value_ct = (1.0 - alpha) *
                                    _subchannel_mesh.getCrossflowSign(i_ch, counter) *
                                    _Wij(i_gap, cross_index);
             PetscInt row_ct = i_ch + _n_channels * iz_ind;
             PetscInt col_ct = jj_ch + _n_channels * iz_ind;
-            MatSetValues(hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+            MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
           }
 
           // Turbulent cross flows
@@ -1683,10 +1793,10 @@ SubChannel1PhaseProblem::computeh(int iblock)
           {
             PetscScalar value_vec_ct =
                 -2.0 * alpha * (*_mdot_soln)(node_in)*_WijPrime(i_gap, cross_index);
-            value_vec_ct = alpha * (*_mdot_soln)(node_in_j)*_WijPrime(i_gap, cross_index);
+            value_vec_ct += alpha * (*_mdot_soln)(node_in_j)*_WijPrime(i_gap, cross_index);
             value_vec_ct += alpha * (*_mdot_soln)(node_in_i)*_WijPrime(i_gap, cross_index);
             PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
-            VecSetValues(hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+            VecSetValues(_hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
           }
           else
           {
@@ -1694,37 +1804,38 @@ SubChannel1PhaseProblem::computeh(int iblock)
             PetscInt row_ct = i_ch + _n_channels * iz_ind;
             PetscInt col_ct = i_ch + _n_channels * (iz_ind - 1);
             MatSetValues(
-                hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
+                _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
 
             PetscScalar value_left_ct = -1.0 * alpha * _WijPrime(i_gap, cross_index);
             row_ct = i_ch + _n_channels * iz_ind;
             col_ct = jj_ch + _n_channels * (iz_ind - 1);
             MatSetValues(
-                hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
+                _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
 
             PetscScalar value_right_ct = -1.0 * alpha * _WijPrime(i_gap, cross_index);
             row_ct = i_ch + _n_channels * iz_ind;
             col_ct = ii_ch + _n_channels * (iz_ind - 1);
             MatSetValues(
-                hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
+                _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
           }
 
           PetscScalar value_center_ct = 2.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index);
           PetscInt row_ct = i_ch + _n_channels * iz_ind;
           PetscInt col_ct = i_ch + _n_channels * iz_ind;
           MatSetValues(
-              hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
+              _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
 
           PetscScalar value_left_ct = -1.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index);
           row_ct = i_ch + _n_channels * iz_ind;
           col_ct = jj_ch + _n_channels * iz_ind;
-          MatSetValues(hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
+          MatSetValues(
+              _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
 
           PetscScalar value_right_ct = -1.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index);
           row_ct = i_ch + _n_channels * iz_ind;
           col_ct = ii_ch + _n_channels * iz_ind;
           MatSetValues(
-              hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
+              _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
 
           counter++;
         }
@@ -1738,46 +1849,46 @@ SubChannel1PhaseProblem::computeh(int iblock)
           added_enthalpy = 0.0;
 
         PetscInt row_vec_ht = i_ch + _n_channels * iz_ind;
-        VecSetValues(hc_added_heat_rhs, 1, &row_vec_ht, &added_enthalpy, ADD_VALUES);
+        VecSetValues(_hc_added_heat_rhs, 1, &row_vec_ht, &added_enthalpy, ADD_VALUES);
       }
     }
 
     /// Assembling system
-    MatAssemblyBegin(hc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(hc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(hc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     // Matrix
 #if !PETSC_VERSION_LESS_THAN(3, 15, 0)
-    MatAXPY(hc_sys_h_mat, 1.0, hc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(hc_sys_h_mat, 1.0, hc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(hc_sys_h_mat, 1.0, hc_cross_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_cross_derivative_mat, UNKNOWN_NONZERO_PATTERN);
 #else
-    MatAXPY(hc_sys_h_mat, 1.0, hc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(hc_sys_h_mat, 1.0, hc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(hc_sys_h_mat, 1.0, hc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
 #endif
-    MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     if (_verbose_subchannel)
       _console << "Block: " << iblock << " - Enthalpy conservation matrix assembled" << std::endl;
     // RHS
-    VecAXPY(hc_sys_h_rhs, 1.0, hc_time_derivative_rhs);
-    VecAXPY(hc_sys_h_rhs, 1.0, hc_advective_derivative_rhs);
-    VecAXPY(hc_sys_h_rhs, 1.0, hc_cross_derivative_rhs);
-    VecAXPY(hc_sys_h_rhs, 1.0, hc_added_heat_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_time_derivative_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_advective_derivative_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_cross_derivative_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_added_heat_rhs);
 
     if (_segregated_bool || (!_monolithic_thermal_bool))
     {
@@ -1785,14 +1896,14 @@ SubChannel1PhaseProblem::computeh(int iblock)
       KSP ksploc;
       PC pc;
       Vec sol;
-      VecDuplicate(hc_sys_h_rhs, &sol);
+      VecDuplicate(_hc_sys_h_rhs, &sol);
       KSPCreate(PETSC_COMM_WORLD, &ksploc);
-      KSPSetOperators(ksploc, hc_sys_h_mat, hc_sys_h_mat);
+      KSPSetOperators(ksploc, _hc_sys_h_mat, _hc_sys_h_mat);
       KSPGetPC(ksploc, &pc);
       PCSetType(pc, PCJACOBI);
       KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
       KSPSetFromOptions(ksploc);
-      KSPSolve(ksploc, hc_sys_h_rhs, sol);
+      KSPSolve(ksploc, _hc_sys_h_rhs, sol);
       PetscScalar * xx;
       VecGetArray(sol, &xx);
 
@@ -1947,16 +2058,16 @@ SubChannel1PhaseProblem::computeWij(int iblock)
   {
 
     // Initializing to zero the elements of the lateral momentum assembly
-    MatZeroEntries(cmc_time_derivative_mat);
-    MatZeroEntries(cmc_advective_derivative_mat);
-    MatZeroEntries(cmc_friction_force_mat);
-    MatZeroEntries(cmc_pressure_force_mat);
-    VecZeroEntries(cmc_time_derivative_rhs);
-    VecZeroEntries(cmc_advective_derivative_rhs);
-    VecZeroEntries(cmc_friction_force_rhs);
-    VecZeroEntries(cmc_pressure_force_rhs);
-    MatZeroEntries(cmc_sys_Wij_mat);
-    VecZeroEntries(cmc_sys_Wij_rhs);
+    MatZeroEntries(_cmc_time_derivative_mat);
+    MatZeroEntries(_cmc_advective_derivative_mat);
+    MatZeroEntries(_cmc_friction_force_mat);
+    MatZeroEntries(_cmc_pressure_force_mat);
+    VecZeroEntries(_cmc_time_derivative_rhs);
+    VecZeroEntries(_cmc_advective_derivative_rhs);
+    VecZeroEntries(_cmc_friction_force_rhs);
+    VecZeroEntries(_cmc_pressure_force_rhs);
+    MatZeroEntries(_cmc_sys_Wij_mat);
+    VecZeroEntries(_cmc_sys_Wij_rhs);
 
     unsigned int last_node = (iblock + 1) * _block_size;
     unsigned int first_node = iblock * _block_size;
@@ -2008,9 +2119,9 @@ SubChannel1PhaseProblem::computeWij(int iblock)
         PetscInt row_td = i_gap + _n_gaps * iz_ind;
         PetscInt col_td = i_gap + _n_gaps * iz_ind;
         PetscScalar value_td = time_factor;
-        MatSetValues(cmc_time_derivative_mat, 1, &row_td, 1, &col_td, &value_td, INSERT_VALUES);
+        MatSetValues(_cmc_time_derivative_mat, 1, &row_td, 1, &col_td, &value_td, INSERT_VALUES);
         PetscScalar value_td_rhs = time_factor * _Wij_old(i_gap, iz);
-        VecSetValues(cmc_time_derivative_rhs, 1, &row_td, &value_td_rhs, INSERT_VALUES);
+        VecSetValues(_cmc_time_derivative_rhs, 1, &row_td, &value_td_rhs, INSERT_VALUES);
 
         // Assembling inertial term
         PetscScalar Pe = 0.5;
@@ -2025,17 +2136,17 @@ SubChannel1PhaseProblem::computeWij(int iblock)
         {
           PetscInt row_ad = i_gap + _n_gaps * iz_ind;
           PetscScalar value_ad = term_in * alpha * _Wij(i_gap, iz - 1);
-          VecSetValues(cmc_advective_derivative_rhs, 1, &row_ad, &value_ad, ADD_VALUES);
+          VecSetValues(_cmc_advective_derivative_rhs, 1, &row_ad, &value_ad, ADD_VALUES);
 
           PetscInt col_ad = i_gap + _n_gaps * iz_ind;
           value_ad = -1.0 * term_in * (1.0 - alpha) + term_out * alpha;
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
 
           col_ad = i_gap + _n_gaps * (iz_ind + 1);
           value_ad = term_out * (1.0 - alpha);
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
         }
         else if (iz == last_node)
         {
@@ -2043,15 +2154,15 @@ SubChannel1PhaseProblem::computeWij(int iblock)
           PetscInt col_ad = i_gap + _n_gaps * (iz_ind - 1);
           PetscScalar value_ad = -1.0 * term_in * alpha;
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
 
           col_ad = i_gap + _n_gaps * iz_ind;
           value_ad = -1.0 * term_in * (1.0 - alpha) + term_out * alpha;
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
 
           value_ad = -1.0 * term_out * (1.0 - alpha) * _Wij(i_gap, iz);
-          VecSetValues(cmc_advective_derivative_rhs, 1, &row_ad, &value_ad, ADD_VALUES);
+          VecSetValues(_cmc_advective_derivative_rhs, 1, &row_ad, &value_ad, ADD_VALUES);
         }
         else
         {
@@ -2059,24 +2170,24 @@ SubChannel1PhaseProblem::computeWij(int iblock)
           PetscInt col_ad = i_gap + _n_gaps * (iz_ind - 1);
           PetscScalar value_ad = -1.0 * term_in * alpha;
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
 
           col_ad = i_gap + _n_gaps * iz_ind;
           value_ad = -1.0 * term_in * (1.0 - alpha) + term_out * alpha;
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
 
           col_ad = i_gap + _n_gaps * (iz_ind + 1);
           value_ad = term_out * (1.0 - alpha);
           MatSetValues(
-              cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
+              _cmc_advective_derivative_mat, 1, &row_ad, 1, &col_ad, &value_ad, INSERT_VALUES);
         }
 
         // Assembling friction force
         PetscInt row_ff = i_gap + _n_gaps * iz_ind;
         PetscInt col_ff = i_gap + _n_gaps * iz_ind;
         PetscScalar value_ff = _kij * std::abs(_Wij(i_gap, iz)) / 2.0;
-        MatSetValues(cmc_friction_force_mat, 1, &row_ff, 1, &col_ff, &value_ff, INSERT_VALUES);
+        MatSetValues(_cmc_friction_force_mat, 1, &row_ff, 1, &col_ff, &value_ff, INSERT_VALUES);
 
         // Assembling pressure force
         alpha = computeInterpolationCoefficients("central_difference", Pe);
@@ -2087,28 +2198,28 @@ SubChannel1PhaseProblem::computeWij(int iblock)
           PetscInt row_pf = i_gap + _n_gaps * iz_ind;
           PetscInt col_pf = i_ch + _n_channels * iz_ind;
           PetscScalar value_pf = -1.0 * alpha * pressure_factor;
-          MatSetValues(cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
+          MatSetValues(_cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
           col_pf = j_ch + _n_channels * iz_ind;
           value_pf = alpha * pressure_factor;
-          MatSetValues(cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
+          MatSetValues(_cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
 
           if (iz == last_node)
           {
             PetscInt row_pf = i_gap + _n_gaps * iz_ind;
             PetscScalar value_pf = (1.0 - alpha) * pressure_factor * (*_P_soln)(node_out_i);
-            VecSetValues(cmc_pressure_force_rhs, 1, &row_pf, &value_pf, ADD_VALUES);
+            VecSetValues(_cmc_pressure_force_rhs, 1, &row_pf, &value_pf, ADD_VALUES);
             value_pf = -1.0 * (1.0 - alpha) * pressure_factor * (*_P_soln)(node_out_j);
-            VecSetValues(cmc_pressure_force_rhs, 1, &row_pf, &value_pf, ADD_VALUES);
+            VecSetValues(_cmc_pressure_force_rhs, 1, &row_pf, &value_pf, ADD_VALUES);
           }
           else
           {
             row_pf = i_gap + _n_gaps * iz_ind;
             col_pf = i_ch + _n_channels * (iz_ind + 1);
             value_pf = -1.0 * (1.0 - alpha) * pressure_factor;
-            MatSetValues(cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
+            MatSetValues(_cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
             col_pf = j_ch + _n_channels * (iz_ind + 1);
             value_pf = (1.0 - alpha) * pressure_factor;
-            MatSetValues(cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
+            MatSetValues(_cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
           }
         }
         else
@@ -2117,55 +2228,55 @@ SubChannel1PhaseProblem::computeWij(int iblock)
           PetscInt row_pf = i_gap + _n_gaps * iz_ind;
           PetscInt col_pf = i_ch + _n_channels * iz_ind;
           PetscScalar value_pf = -1.0 * pressure_factor;
-          MatSetValues(cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
+          MatSetValues(_cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
           col_pf = j_ch + _n_channels * iz_ind;
           value_pf = pressure_factor;
-          MatSetValues(cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
+          MatSetValues(_cmc_pressure_force_mat, 1, &row_pf, 1, &col_pf, &value_pf, ADD_VALUES);
         }
       }
     }
     /// Assembling system
-    MatZeroEntries(cmc_sys_Wij_mat);
-    VecZeroEntries(cmc_sys_Wij_rhs);
-    MatAssemblyBegin(cmc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(cmc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(cmc_friction_force_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_friction_force_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatZeroEntries(_cmc_sys_Wij_mat);
+    VecZeroEntries(_cmc_sys_Wij_rhs);
+    MatAssemblyBegin(_cmc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_cmc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_cmc_friction_force_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_friction_force_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     // Matrix
 #if !PETSC_VERSION_LESS_THAN(3, 15, 0)
-    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
-    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_friction_force_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAXPY(_cmc_sys_Wij_mat, 1.0, _cmc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_cmc_sys_Wij_mat, 1.0, _cmc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_cmc_sys_Wij_mat, 1.0, _cmc_friction_force_mat, UNKNOWN_NONZERO_PATTERN);
 #else
-    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
-    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAXPY(cmc_sys_Wij_mat, 1.0, cmc_friction_force_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAXPY(_cmc_sys_Wij_mat, 1.0, _cmc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_cmc_sys_Wij_mat, 1.0, _cmc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_cmc_sys_Wij_mat, 1.0, _cmc_friction_force_mat, DIFFERENT_NONZERO_PATTERN);
 #endif
-    MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
-    MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
     if (_verbose_subchannel)
       _console << "Block: " << iblock << " - Cross flow system matrix assembled" << std::endl;
     if (_verbose_subchannel)
       _console << "Block: " << iblock << " - Cross flow pressure force matrix assembled"
                << std::endl;
     // RHS
-    VecAXPY(cmc_sys_Wij_rhs, 1.0, cmc_time_derivative_rhs);
-    VecAXPY(cmc_sys_Wij_rhs, 1.0, cmc_advective_derivative_rhs);
-    VecAXPY(cmc_sys_Wij_rhs, 1.0, cmc_friction_force_rhs);
+    VecAXPY(_cmc_sys_Wij_rhs, 1.0, _cmc_time_derivative_rhs);
+    VecAXPY(_cmc_sys_Wij_rhs, 1.0, _cmc_advective_derivative_rhs);
+    VecAXPY(_cmc_sys_Wij_rhs, 1.0, _cmc_friction_force_rhs);
 
     if (_segregated_bool)
     {
@@ -2177,14 +2288,14 @@ SubChannel1PhaseProblem::computeWij(int iblock)
       Vec loc_holder_Wij;
       createPetscVector(loc_holder_Wij, _block_size * _n_gaps);
       populateVectorFromHandle<SolutionHandle *>(
-          prodp, _P_soln, iblock * _block_size, (iblock + 1) * _block_size - 1, _n_channels);
+          _prodp, _P_soln, iblock * _block_size, (iblock + 1) * _block_size - 1, _n_channels);
       populateVectorFromDense<libMesh::DenseMatrix<Real>>(
           loc_holder_Wij, _Wij, first_node, last_node, _n_gaps);
 
-      MatMult(cmc_sys_Wij_mat, Wij_vec, sol_holder_W);
-      VecAXPY(sol_holder_W, -1.0, cmc_sys_Wij_rhs);
-      MatMult(cmc_pressure_force_mat, prodp, sol_holder_P);
-      VecAXPY(sol_holder_P, -1.0, cmc_pressure_force_rhs);
+      MatMult(_cmc_sys_Wij_mat, _Wij_vec, sol_holder_W);
+      VecAXPY(sol_holder_W, -1.0, _cmc_sys_Wij_rhs);
+      MatMult(_cmc_pressure_force_mat, _prodp, sol_holder_P);
+      VecAXPY(sol_holder_P, -1.0, _cmc_pressure_force_rhs);
       VecAXPY(sol_holder_W, 1.0, sol_holder_P);
       PetscScalar * xx;
       VecGetArray(sol_holder_W, &xx);
@@ -2197,7 +2308,6 @@ SubChannel1PhaseProblem::computeWij(int iblock)
           _Wij_residual_matrix(i_gap, iz - 1 - iblock * _block_size) = xx[iz_ind * _n_gaps + i_gap];
         }
       }
-
       VecDestroy(&sol_holder_P);
       VecDestroy(&sol_holder_W);
       VecDestroy(&loc_holder_Wij);
@@ -2384,11 +2494,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   }
   // Mass conservation
   PetscInt field_num = 0;
-  ierr = MatAssemblyBegin(mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
+  ierr = MatAssemblyBegin(_mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
+  ierr = MatAssemblyEnd(_mc_axial_convection_mat, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
-  ierr = MatDuplicate(mc_axial_convection_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 0]);
+  ierr = MatDuplicate(_mc_axial_convection_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 0]);
   CHKERRQ(ierr);
   ierr = MatAssemblyBegin(mat_array[Q * field_num + 0], MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
@@ -2397,11 +2507,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   mat_array[Q * field_num + 1] = NULL;
   if (_axial_mass_flow_tight_coupling)
   {
-    ierr = MatAssemblyBegin(mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyBegin(_mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(_mc_sumWij_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatDuplicate(mc_sumWij_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 2]);
+    ierr = MatDuplicate(_mc_sumWij_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 2]);
     CHKERRQ(ierr);
     ierr = MatAssemblyBegin(mat_array[Q * field_num + 2], MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
@@ -2416,14 +2526,14 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   {
     mat_array[Q * field_num + 3] = NULL;
   }
-  ierr = VecDuplicate(mc_axial_convection_rhs, &vec_array[field_num]);
+  ierr = VecDuplicate(_mc_axial_convection_rhs, &vec_array[field_num]);
   CHKERRQ(ierr);
-  ierr = VecCopy(mc_axial_convection_rhs, vec_array[field_num]);
+  ierr = VecCopy(_mc_axial_convection_rhs, vec_array[field_num]);
   CHKERRQ(ierr);
   if (!_axial_mass_flow_tight_coupling)
   {
     Vec sumWij_loc;
-    ierr = VecDuplicate(mc_axial_convection_rhs, &sumWij_loc);
+    ierr = VecDuplicate(_mc_axial_convection_rhs, &sumWij_loc);
     CHKERRQ(ierr);
     ierr = VecSet(sumWij_loc, 0.0);
     CHKERRQ(ierr);
@@ -2445,8 +2555,8 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     VecDestroy(&sumWij_loc);
   }
 
-  //  MatGetRowMaxAbs(mc_axial_convection_mat, mc_axial_convection_rhs, NULL);
-  //  VecView(mc_axial_convection_rhs, PETSC_VIEWER_STDOUT_WORLD);
+  //  MatGetRowMaxAbs(_mc_axial_convection_mat, _mc_axial_convection_rhs, NULL);
+  //  VecView(_mc_axial_convection_rhs, PETSC_VIEWER_STDOUT_WORLD);
 
   if (_verbose_subchannel)
     _console << "Mass ok." << std::endl;
@@ -2454,11 +2564,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   field_num = 1;
   if (_pressure_axial_momentum_tight_coupling)
   {
-    ierr = MatAssemblyBegin(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyBegin(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(_amc_sys_mdot_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatDuplicate(amc_sys_mdot_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 0]);
+    ierr = MatDuplicate(_amc_sys_mdot_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 0]);
     CHKERRQ(ierr);
     ierr = MatAssemblyBegin(mat_array[Q * field_num + 0], MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
@@ -2469,11 +2579,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   {
     mat_array[Q * field_num + 0] = NULL;
   }
-  ierr = MatAssemblyBegin(amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+  ierr = MatAssemblyBegin(_amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+  ierr = MatAssemblyEnd(_amc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
-  ierr = MatDuplicate(amc_pressure_force_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 1]);
+  ierr = MatDuplicate(_amc_pressure_force_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 1]);
   CHKERRQ(ierr);
   ierr = MatAssemblyBegin(mat_array[Q * field_num + 1], MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
@@ -2484,13 +2594,13 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   {
     mat_array[Q * field_num + 3] = NULL;
   }
-  ierr = VecDuplicate(amc_pressure_force_rhs, &vec_array[field_num]);
+  ierr = VecDuplicate(_amc_pressure_force_rhs, &vec_array[field_num]);
   CHKERRQ(ierr);
-  ierr = VecCopy(amc_pressure_force_rhs, vec_array[field_num]);
+  ierr = VecCopy(_amc_pressure_force_rhs, vec_array[field_num]);
   CHKERRQ(ierr);
   if (_pressure_axial_momentum_tight_coupling)
   {
-    ierr = VecAXPY(vec_array[field_num], 1.0, amc_sys_mdot_rhs);
+    ierr = VecAXPY(vec_array[field_num], 1.0, _amc_sys_mdot_rhs);
     CHKERRQ(ierr);
   }
   else
@@ -2498,21 +2608,21 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     unsigned int last_node = (iblock + 1) * _block_size;
     unsigned int first_node = iblock * _block_size + 1;
     populateVectorFromHandle<SolutionHandle *>(
-        prod, _mdot_soln, first_node, last_node, _n_channels);
+        _prod, _mdot_soln, first_node, last_node, _n_channels);
     Vec ls;
-    VecDuplicate(amc_sys_mdot_rhs, &ls);
-    MatMult(amc_sys_mdot_mat, prod, ls);
-    VecAXPY(ls, -1.0, amc_sys_mdot_rhs);
+    VecDuplicate(_amc_sys_mdot_rhs, &ls);
+    MatMult(_amc_sys_mdot_mat, _prod, ls);
+    VecAXPY(ls, -1.0, _amc_sys_mdot_rhs);
     // VecView(ls, PETSC_VIEWER_STDOUT_WORLD);
     VecAXPY(vec_array[field_num], -1.0, ls);
     VecDestroy(&ls);
   }
 
-  //  MatView(amc_pressure_force_mat, PETSC_VIEWER_STDOUT_WORLD);
+  //  MatView(_amc_pressure_force_mat, PETSC_VIEWER_STDOUT_WORLD);
   //  VecView(vec_array[field_num], PETSC_VIEWER_STDOUT_WORLD);
 
-  //  MatGetRowMaxAbs(amc_pressure_force_mat, amc_pressure_force_rhs, NULL);
-  //  VecView(amc_pressure_force_rhs, PETSC_VIEWER_STDOUT_WORLD);
+  //  MatGetRowMaxAbs(_amc_pressure_force_mat, _amc_pressure_force_rhs, NULL);
+  //  VecView(_amc_pressure_force_rhs, PETSC_VIEWER_STDOUT_WORLD);
   if (_verbose_subchannel)
     _console << "Lin mom OK." << std::endl;
 
@@ -2521,11 +2631,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   mat_array[Q * field_num + 0] = NULL;
   if (_pressure_cross_momentum_tight_coupling)
   {
-    ierr = MatAssemblyBegin(cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyBegin(_cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(_cmc_pressure_force_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatDuplicate(cmc_pressure_force_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 1]);
+    ierr = MatDuplicate(_cmc_pressure_force_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 1]);
     CHKERRQ(ierr);
     ierr = MatAssemblyBegin(mat_array[Q * field_num + 1], MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
@@ -2546,40 +2656,40 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //   populateVectorFromHandle<SolutionHandle *>(
   //       prod, _mdot_soln, first_node, last_node, _n_channels);
   //   Vec ls;
-  //   VecDuplicate(amc_sys_mdot_rhs, &ls);
-  //   MatMult(amc_sys_mdot_mat, prod, ls);
+  //   VecDuplicate(_amc_sys_mdot_rhs, &ls);
+  //   MatMult(_amc_sys_mdot_mat, prod, ls);
   //
   //   KSP ksploc;
   //   PC pc;
   //   Vec sol;
-  //   VecDuplicate(amc_pressure_force_rhs, &sol);
+  //   VecDuplicate(_amc_pressure_force_rhs, &sol);
   //   KSPCreate(PETSC_COMM_WORLD, &ksploc);
-  //   KSPSetOperators(ksploc, amc_pressure_force_mat, amc_pressure_force_mat);
+  //   KSPSetOperators(ksploc, _amc_pressure_force_mat, _amc_pressure_force_mat);
   //   KSPGetPC(ksploc, &pc);
   //   PCSetType(pc, PCJACOBI);
   //   KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
   //   KSPSetFromOptions(ksploc);
-  //   VecAXPY(amc_pressure_force_rhs, 1.0, ls);
-  //   KSPSolve(ksploc, amc_pressure_force_rhs, sol);
+  //   VecAXPY(_amc_pressure_force_rhs, 1.0, ls);
+  //   KSPSolve(ksploc, _amc_pressure_force_rhs, sol);
   //   KSPDestroy(&ksploc);
   //   VecDestroy(&ls);
   //
   //   Vec sol_holder_P;
   //   createPetscVector(sol_holder_P, _block_size * _n_gaps);
-  //   ierr = MatMult(cmc_pressure_force_mat, sol, sol_holder_P);
+  //   ierr = MatMult(_cmc_pressure_force_mat, sol, sol_holder_P);
   //   CHKERRQ(ierr);
-  //   ierr = VecAXPY(sol_holder_P, -1.0, cmc_pressure_force_rhs);
+  //   ierr = VecAXPY(sol_holder_P, -1.0, _cmc_pressure_force_rhs);
   //   CHKERRQ(ierr);
   //
   //   Vec diag_Wij;
-  //   ierr = VecDuplicate(cmc_sys_Wij_rhs, &diag_Wij);
+  //   ierr = VecDuplicate(_cmc_sys_Wij_rhs, &diag_Wij);
   //   CHKERRQ(ierr);
-  //   ierr = MatGetDiagonal(cmc_sys_Wij_mat, diag_Wij);
+  //   ierr = MatGetDiagonal(_cmc_sys_Wij_mat, diag_Wij);
   //   CHKERRQ(ierr);
   //   VecPointwiseDivide(sol_holder_P, sol_holder_P, diag_Wij);
   //
   //   Vec sumWij_loc;
-  //   ierr = VecDuplicate(mc_axial_convection_rhs, &sumWij_loc);
+  //   ierr = VecDuplicate(_mc_axial_convection_rhs, &sumWij_loc);
   //   CHKERRQ(ierr);
   //   ierr = VecSet(sumWij_loc, 0.0);
   //   CHKERRQ(ierr);
@@ -2621,9 +2731,9 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //     _console << "Max val: " << max_value << std::endl;
   //
   //   Vec Wij_new_loc, Wij_old_loc;
-  //   ierr = VecDuplicate(cmc_sys_Wij_rhs, &Wij_old_loc);
+  //   ierr = VecDuplicate(_cmc_sys_Wij_rhs, &Wij_old_loc);
   //   CHKERRQ(ierr);
-  //   ierr = VecDuplicate(cmc_sys_Wij_rhs, &Wij_new_loc);
+  //   ierr = VecDuplicate(_cmc_sys_Wij_rhs, &Wij_new_loc);
   //   CHKERRQ(ierr);
   //   populateVectorFromDense<libMesh::DenseMatrix<Real>>(
   //       Wij_old_loc, _Wij_old, first_node, last_node, _n_gaps);
@@ -2639,7 +2749,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //   VecAbs(sol_holder_P);
   //   VecScale(sol_holder_P, max_value);
   //
-  //   ierr = MatDiagonalSet(cmc_sys_Wij_mat, sol_holder_P, ADD_VALUES);
+  //   ierr = MatDiagonalSet(_cmc_sys_Wij_mat, sol_holder_P, ADD_VALUES);
   //   CHKERRQ(ierr);
   //
   //   VecDestroy(&sol);
@@ -2651,27 +2761,27 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //
   //   //    PetscScalar relaxation_factor = 0.5;
   //   //    Vec diag_Wij;
-  //   //    ierr = VecDuplicate(cmc_sys_Wij_rhs,&diag_Wij); CHKERRQ(ierr);
-  //   //    ierr = MatGetDiagonal(cmc_sys_Wij_mat,diag_Wij); CHKERRQ(ierr);
+  //   //    ierr = VecDuplicate(_cmc_sys_Wij_rhs,&diag_Wij); CHKERRQ(ierr);
+  //   //    ierr = MatGetDiagonal(_cmc_sys_Wij_mat,diag_Wij); CHKERRQ(ierr);
   //   //    ierr = VecScale(diag_Wij, 1.0/relaxation_factor); CHKERRQ(ierr);
-  //   //    ierr = MatDiagonalSet(cmc_sys_Wij_mat, diag_Wij, ADD_VALUES); CHKERRQ(ierr);
-  //   //    populateVectorFromDense<libMesh::DenseMatrix<Real>>(Wij_vec, _Wij_old, first_node,
+  //   //    ierr = MatDiagonalSet(_cmc_sys_Wij_mat, diag_Wij, ADD_VALUES); CHKERRQ(ierr);
+  //   //    populateVectorFromDense<libMesh::DenseMatrix<Real>>(_Wij_vec, _Wij_old, first_node,
   //   //    last_node, _n_gaps); ierr = VecScale(diag_Wij, (1.0-relaxation_factor)); CHKERRQ(ierr);
-  //   //    ierr = VecPointwiseMult(Wij_vec, Wij_vec, diag_Wij); CHKERRQ(ierr);
+  //   //    ierr = VecPointwiseMult(_Wij_vec, _Wij_vec, diag_Wij); CHKERRQ(ierr);
   //   //    VecDestroy(&diag_Wij);
   // }
   // if (false)
   // {
   //   PetscScalar local_shift = -1.0;
-  //   ierr = MatShift(cmc_sys_Wij_mat, local_shift);
+  //   ierr = MatShift(_cmc_sys_Wij_mat, local_shift);
   //   CHKERRQ(ierr);
   // }
 
-  ierr = MatAssemblyBegin(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+  ierr = MatAssemblyBegin(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
+  ierr = MatAssemblyEnd(_cmc_sys_Wij_mat, MAT_FINAL_ASSEMBLY);
   CHKERRQ(ierr);
-  ierr = MatDuplicate(cmc_sys_Wij_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 2]);
+  ierr = MatDuplicate(_cmc_sys_Wij_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 2]);
   CHKERRQ(ierr);
   // ierr = MatScale(mat_array[Q*field_num+2], -1.0); CHKERRQ(ierr);
   ierr = MatAssemblyBegin(mat_array[Q * field_num + 2], MAT_FINAL_ASSEMBLY);
@@ -2683,13 +2793,13 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     mat_array[Q * field_num + 3] = NULL;
   }
 
-  ierr = VecDuplicate(cmc_sys_Wij_rhs, &vec_array[field_num]);
+  ierr = VecDuplicate(_cmc_sys_Wij_rhs, &vec_array[field_num]);
   CHKERRQ(ierr);
-  ierr = VecCopy(cmc_sys_Wij_rhs, vec_array[field_num]);
+  ierr = VecCopy(_cmc_sys_Wij_rhs, vec_array[field_num]);
   CHKERRQ(ierr);
   if (_pressure_cross_momentum_tight_coupling)
   {
-    ierr = VecAXPY(vec_array[field_num], 1.0, cmc_pressure_force_rhs);
+    ierr = VecAXPY(vec_array[field_num], 1.0, _cmc_pressure_force_rhs);
     CHKERRQ(ierr);
     // ierr = VecScale(vec_array[field_num], -1.0); CHKERRQ(ierr);
   }
@@ -2698,11 +2808,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     Vec sol_holder_P;
     createPetscVector(sol_holder_P, _block_size * _n_gaps);
     populateVectorFromHandle<SolutionHandle *>(
-        prodp, _P_soln, iblock * _block_size, (iblock + 1) * _block_size - 1, _n_channels);
+        _prodp, _P_soln, iblock * _block_size, (iblock + 1) * _block_size - 1, _n_channels);
 
-    ierr = MatMult(cmc_pressure_force_mat, prodp, sol_holder_P);
+    ierr = MatMult(_cmc_pressure_force_mat, _prodp, sol_holder_P);
     CHKERRQ(ierr);
-    ierr = VecAXPY(sol_holder_P, -1.0, cmc_pressure_force_rhs);
+    ierr = VecAXPY(sol_holder_P, -1.0, _cmc_pressure_force_rhs);
     CHKERRQ(ierr);
     ierr = VecScale(sol_holder_P, 1.0);
     CHKERRQ(ierr);
@@ -2720,28 +2830,28 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //   Vec sol_holder_W;
   //   createPetscVector(sol_holder_W, _block_size * _n_gaps);
   //   populateVectorFromHandle<SolutionHandle *>(
-  //       prodp, _P_soln, iblock * _block_size, (iblock + 1) * _block_size - 1, _n_channels);
+  //       _prodp, _P_soln, iblock * _block_size, (iblock + 1) * _block_size - 1, _n_channels);
   //   populateVectorFromDense<libMesh::DenseMatrix<Real>>(
-  //       Wij_vec, _Wij, first_node, last_node, _n_gaps);
+  //       _Wij_vec, _Wij, first_node, last_node, _n_gaps);
   //
   //   Vec diag_Wij;
-  //   ierr = VecDuplicate(cmc_sys_Wij_rhs, &diag_Wij);
+  //   ierr = VecDuplicate(_cmc_sys_Wij_rhs, &diag_Wij);
   //   CHKERRQ(ierr);
-  //   ierr = MatGetDiagonal(cmc_sys_Wij_mat, diag_Wij);
+  //   ierr = MatGetDiagonal(_cmc_sys_Wij_mat, diag_Wij);
   //   CHKERRQ(ierr);
   //   // VecView(diag_Wij, PETSC_VIEWER_STDOUT_WORLD);
   //   ierr = VecScale(diag_Wij, -1.0);
   //   CHKERRQ(ierr);
-  //   ierr = MatDiagonalSet(cmc_sys_Wij_mat, diag_Wij, ADD_VALUES);
+  //   ierr = MatDiagonalSet(_cmc_sys_Wij_mat, diag_Wij, ADD_VALUES);
   //   CHKERRQ(ierr);
   //   ierr = VecScale(diag_Wij, -1.0);
   //   CHKERRQ(ierr);
   //
-  //   MatMult(cmc_sys_Wij_mat, Wij_vec, sol_holder_W);
-  //   VecAXPY(sol_holder_W, -1.0, cmc_sys_Wij_rhs);
+  //   MatMult(_cmc_sys_Wij_mat, _Wij_vec, sol_holder_W);
+  //   VecAXPY(sol_holder_W, -1.0, _cmc_sys_Wij_rhs);
   //   VecAbs(sol_holder_W);
-  //   MatMult(cmc_pressure_force_mat, prodp, sol_holder_P);
-  //   VecAXPY(sol_holder_P, -1.0, cmc_pressure_force_rhs);
+  //   MatMult(_cmc_pressure_force_mat, _prodp, sol_holder_P);
+  //   VecAXPY(sol_holder_P, -1.0, _cmc_pressure_force_rhs);
   //   VecAbs(sol_holder_W);
   //   VecAXPY(sol_holder_W, 1.0, sol_holder_P);
   //
@@ -2757,7 +2867,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //   ierr = VecScale(sol_holder_W, 1.0 / min_mdot);
   //
   //   Vec unit_vector;
-  //   ierr = VecDuplicate(cmc_sys_Wij_rhs, &unit_vector);
+  //   ierr = VecDuplicate(_cmc_sys_Wij_rhs, &unit_vector);
   //   CHKERRQ(ierr);
   //   ierr = VecSet(unit_vector, 1.0);
   //   CHKERRQ(ierr);
@@ -2769,7 +2879,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //   PetscScalar constraint_max;
   //   PetscInt max_pos;
   //   Vec abs_diag_Wij;
-  //   ierr = VecDuplicate(cmc_sys_Wij_rhs, &abs_diag_Wij);
+  //   ierr = VecDuplicate(_cmc_sys_Wij_rhs, &abs_diag_Wij);
   //   CHKERRQ(ierr);
   //   ierr = VecCopy(diag_Wij, abs_diag_Wij);
   //   CHKERRQ(ierr);
@@ -2801,8 +2911,8 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   //   VecDestroy(&abs_diag_Wij);
   // }
 
-  //  MatGetRowMaxAbs(cmc_sys_Wij_mat, cmc_sys_Wij_rhs, NULL);
-  //  VecView(cmc_sys_Wij_rhs, PETSC_VIEWER_STDOUT_WORLD);
+  //  MatGetRowMaxAbs(_cmc_sys_Wij_mat, _cmc_sys_Wij_rhs, NULL);
+  //  VecView(_cmc_sys_Wij_rhs, PETSC_VIEWER_STDOUT_WORLD);
 
   if (_verbose_subchannel)
     _console << "Cross mom ok." << std::endl;
@@ -2814,11 +2924,11 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     mat_array[Q * field_num + 0] = NULL;
     mat_array[Q * field_num + 1] = NULL;
     mat_array[Q * field_num + 2] = NULL;
-    ierr = MatAssemblyBegin(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    ierr = MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = MatDuplicate(hc_sys_h_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 3]);
+    ierr = MatDuplicate(_hc_sys_h_mat, MAT_COPY_VALUES, &mat_array[Q * field_num + 3]);
     if (lag_block_thermal_solve)
     {
       ierr = MatZeroEntries(mat_array[Q * field_num + 3]);
@@ -2829,9 +2939,9 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     CHKERRQ(ierr);
     ierr = MatAssemblyEnd(mat_array[Q * field_num + 3], MAT_FINAL_ASSEMBLY);
     CHKERRQ(ierr);
-    ierr = VecDuplicate(hc_sys_h_rhs, &vec_array[field_num]);
+    ierr = VecDuplicate(_hc_sys_h_rhs, &vec_array[field_num]);
     CHKERRQ(ierr);
-    ierr = VecCopy(hc_sys_h_rhs, vec_array[field_num]);
+    ierr = VecCopy(_hc_sys_h_rhs, vec_array[field_num]);
     if (lag_block_thermal_solve)
     {
       ierr = VecZeroEntries(vec_array[field_num]);
@@ -2849,7 +2959,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   {
     // Estimating cross-flow resistances to achieve realizable solves
     populateVectorFromHandle<SolutionHandle *>(
-        prod, _mdot_soln, first_node, last_node, _n_channels);
+        _prod, _mdot_soln, first_node, last_node, _n_channels);
     Vec mdot_estimate;
     createPetscVector(mdot_estimate, _block_size * _n_channels);
     Vec pmat_diag;
@@ -2873,7 +2983,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     Vec _Wij_old_loc_vec;
     createPetscVector(_Wij_old_loc_vec, _block_size * _n_gaps);
 
-    ierr = MatMult(mat_array[Q], prod, mdot_estimate);
+    ierr = MatMult(mat_array[Q], _prod, mdot_estimate);
     CHKERRQ(ierr);
     ierr = MatGetDiagonal(mat_array[Q + 1], pmat_diag);
     CHKERRQ(ierr);
@@ -2884,7 +2994,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
 
     ierr = MatMult(mat_array[2 * Q + 1], p_estimate, sol_holder_P);
     CHKERRQ(ierr);
-    ierr = VecAXPY(sol_holder_P, -1.0, cmc_pressure_force_rhs);
+    ierr = VecAXPY(sol_holder_P, -1.0, _cmc_pressure_force_rhs);
     CHKERRQ(ierr);
     ierr = MatGetDiagonal(mat_array[2 * Q + 2], diag_Wij_loc);
     CHKERRQ(ierr);
@@ -2918,18 +3028,18 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     }
 
     PetscScalar min_mdot;
-    VecAbs(prod);
-    ierr = VecMin(prod, NULL, &min_mdot);
+    VecAbs(_prod);
+    ierr = VecMin(_prod, NULL, &min_mdot);
     CHKERRQ(ierr);
     if (_verbose_subchannel)
       _console << "Minimum estimated mdot: " << min_mdot << std::endl;
 
     VecAbs(sumWij_loc);
-    ierr = VecMax(sumWij_loc, NULL, &max_sumWij);
+    ierr = VecMax(sumWij_loc, NULL, &_max_sumWij);
     CHKERRQ(ierr);
-    max_sumWij = std::max(1e-10, max_sumWij);
+    _max_sumWij = std::max(1e-10, _max_sumWij);
     if (_verbose_subchannel)
-      _console << "Maximum estimated Wij: " << max_sumWij << std::endl;
+      _console << "Maximum estimated Wij: " << _max_sumWij << std::endl;
 
     populateVectorFromDense<libMesh::DenseMatrix<Real>>(
         _Wij_loc_vec, _Wij, first_node, last_node, _n_gaps);
@@ -2947,12 +3057,12 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     VecSum(_Wij_loc_vec, &relax_factor);
     relax_factor /= _block_size * _n_gaps;
 #endif
-    relax_factor = relax_factor / max_sumWij + 0.5;
+    relax_factor = relax_factor / _max_sumWij + 0.5;
     if (_verbose_subchannel)
       _console << "Relax base value: " << relax_factor << std::endl;
 
     PetscScalar resistance_relaxation = 0.9;
-    _added_K = max_sumWij / min_mdot;
+    _added_K = _max_sumWij / min_mdot;
     if (_verbose_subchannel)
       _console << "New cross resistance: " << _added_K << std::endl;
     _added_K = (_added_K * resistance_relaxation + (1.0 - resistance_relaxation) * _added_K_old) *
@@ -3026,12 +3136,12 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     ierr = MatDiagonalSet(mat_array[Q * field_num + field_num], diag_mdot, INSERT_VALUES);
     CHKERRQ(ierr);
     populateVectorFromHandle<SolutionHandle *>(
-        prod, _mdot_soln, first_node, last_node, _n_channels);
+        _prod, _mdot_soln, first_node, last_node, _n_channels);
     ierr = VecScale(diag_mdot, (1.0 - relaxation_factor_mdot));
     CHKERRQ(ierr);
-    ierr = VecPointwiseMult(prod, prod, diag_mdot);
+    ierr = VecPointwiseMult(_prod, _prod, diag_mdot);
     CHKERRQ(ierr);
-    ierr = VecAXPY(vec_array[field_num], 1.0, prod);
+    ierr = VecAXPY(vec_array[field_num], 1.0, _prod);
     CHKERRQ(ierr);
     VecDestroy(&diag_mdot);
 
@@ -3050,12 +3160,12 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     CHKERRQ(ierr);
     if (_verbose_subchannel)
       _console << "Mat assembled" << std::endl;
-    populateVectorFromHandle<SolutionHandle *>(prod, _P_soln, first_node, last_node, _n_channels);
+    populateVectorFromHandle<SolutionHandle *>(_prod, _P_soln, first_node, last_node, _n_channels);
     ierr = VecScale(diag_P, (1.0 - relaxation_factor_P));
     CHKERRQ(ierr);
-    ierr = VecPointwiseMult(prod, prod, diag_P);
+    ierr = VecPointwiseMult(_prod, _prod, diag_P);
     CHKERRQ(ierr);
-    ierr = VecAXPY(vec_array[field_num], 1.0, prod);
+    ierr = VecAXPY(vec_array[field_num], 1.0, _prod);
     CHKERRQ(ierr);
     VecDestroy(&diag_P);
 
@@ -3073,12 +3183,12 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     ierr = MatDiagonalSet(mat_array[Q * field_num + field_num], diag_Wij, INSERT_VALUES);
     CHKERRQ(ierr);
     populateVectorFromDense<libMesh::DenseMatrix<Real>>(
-        Wij_vec, _Wij, first_node, last_node, _n_gaps);
+        _Wij_vec, _Wij, first_node, last_node, _n_gaps);
     ierr = VecScale(diag_Wij, (1.0 - relaxation_factor_Wij));
     CHKERRQ(ierr);
-    ierr = VecPointwiseMult(Wij_vec, Wij_vec, diag_Wij);
+    ierr = VecPointwiseMult(_Wij_vec, _Wij_vec, diag_Wij);
     CHKERRQ(ierr);
-    ierr = VecAXPY(vec_array[field_num], 1.0, Wij_vec);
+    ierr = VecAXPY(vec_array[field_num], 1.0, _Wij_vec);
     CHKERRQ(ierr);
     VecDestroy(&diag_Wij);
 
@@ -3166,13 +3276,13 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   CHKERRQ(ierr);
   if (_verbose_subchannel)
     _console << "Starting extraction." << std::endl;
-  VecDuplicate(mc_axial_convection_rhs, &sol_mdot);
+  VecDuplicate(_mc_axial_convection_rhs, &sol_mdot);
   VecCopy(loc_vecs[0], sol_mdot);
-  ierr = VecDuplicate(amc_sys_mdot_rhs, &sol_p);
+  ierr = VecDuplicate(_amc_sys_mdot_rhs, &sol_p);
   CHKERRQ(ierr);
   ierr = VecCopy(loc_vecs[1], sol_p);
   CHKERRQ(ierr);
-  ierr = VecDuplicate(cmc_sys_Wij_rhs, &sol_Wij);
+  ierr = VecDuplicate(_cmc_sys_Wij_rhs, &sol_Wij);
   CHKERRQ(ierr);
   ierr = VecCopy(loc_vecs[2], sol_Wij);
   CHKERRQ(ierr);
@@ -3225,14 +3335,14 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
       KSP ksploc;
       PC pc;
       Vec sol;
-      VecDuplicate(hc_sys_h_rhs, &sol);
+      VecDuplicate(_hc_sys_h_rhs, &sol);
       KSPCreate(PETSC_COMM_WORLD, &ksploc);
-      KSPSetOperators(ksploc, hc_sys_h_mat, hc_sys_h_mat);
+      KSPSetOperators(ksploc, _hc_sys_h_mat, _hc_sys_h_mat);
       KSPGetPC(ksploc, &pc);
       PCSetType(pc, PCJACOBI);
       KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
       KSPSetFromOptions(ksploc);
-      KSPSolve(ksploc, hc_sys_h_rhs, sol);
+      KSPSolve(ksploc, _hc_sys_h_rhs, sol);
       PetscScalar * xx;
       VecGetArray(sol, &xx);
 
@@ -3261,7 +3371,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
     else
     {
       Vec sol_h;
-      ierr = VecDuplicate(hc_sys_h_rhs, &sol_h);
+      ierr = VecDuplicate(_hc_sys_h_rhs, &sol_h);
       CHKERRQ(ierr);
       ierr = VecCopy(loc_vecs[3], sol_h);
       CHKERRQ(ierr);
@@ -3293,9 +3403,9 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   }
 
   // Populating sum_Wij
-  MatMult(mc_sumWij_mat, sol_Wij, prod);
+  MatMult(_mc_sumWij_mat, sol_Wij, _prod);
   PetscScalar * xx;
-  VecGetArray(prod, &xx);
+  VecGetArray(_prod, &xx);
   for (unsigned int iz = first_node; iz < last_node + 1; iz++)
   {
     unsigned int iz_ind = iz - first_node;
@@ -3310,16 +3420,16 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   Vec sumWij_loc;
   createPetscVector(sumWij_loc, _block_size * _n_channels);
   populateVectorFromHandle<SolutionHandle *>(
-      prod, _SumWij_soln, first_node, last_node, _n_channels);
-  PetscScalar max_sumWij_new;
-  VecAbs(prod);
-  ierr = VecMax(prod, NULL, &max_sumWij_new);
+      _prod, _SumWij_soln, first_node, last_node, _n_channels);
+
+  VecAbs(_prod);
+  ierr = VecMax(_prod, NULL, &_max_sumWij_new);
   CHKERRQ(ierr);
   if (_verbose_subchannel)
-    _console << "Maximum estimated Wij new: " << max_sumWij_new << std::endl;
-  correction_factor = max_sumWij_new / max_sumWij;
+    _console << "Maximum estimated Wij new: " << _max_sumWij_new << std::endl;
+  _correction_factor = _max_sumWij_new / _max_sumWij;
   if (_verbose_subchannel)
-    _console << "Correction factor: " << correction_factor << std::endl;
+    _console << "Correction factor: " << _correction_factor << std::endl;
   if (_verbose_subchannel)
     _console << "Solutions assigned to MOOSE variables." << std::endl;
 
