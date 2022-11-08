@@ -1,6 +1,7 @@
 #pragma once
 
 #include "TriSubChannelBaseIC.h"
+#include "SubChannelMesh.h"
 
 class TriSubChannelMesh;
 
@@ -16,4 +17,7 @@ public:
 
 public:
   static InputParameters validParams();
+
+protected:
+  SubChannelMesh & _subchannel_mesh;
 };

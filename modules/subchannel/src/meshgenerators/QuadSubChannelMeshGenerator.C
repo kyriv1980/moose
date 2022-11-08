@@ -40,6 +40,20 @@ QuadSubChannelMeshGenerator::validParams()
                                              "Axial location of spacers/vanes/mixing_vanes [m]");
   params.addRequiredParam<std::vector<Real>>(
       "spacer_k", "K-loss coefficient of spacers/vanes/mixing_vanes [-]");
+  params.addParam<std::vector<Real>>("z_blockage",
+                                     std::vector<Real>({0.0, 0.0}),
+                                     "axial location of blockage (inlet, outlet) [m]");
+  params.addParam<std::vector<unsigned int>>("index_blockage",
+                                             std::vector<unsigned int>({0}),
+                                             "index of subchannels affected by blockage");
+  params.addParam<std::vector<Real>>(
+      "reduction_blockage",
+      std::vector<Real>({1.0}),
+      "Area reduction of subchannels affected by blockage (number to muliply the area)");
+  params.addParam<std::vector<Real>>("k_blockage",
+                                     std::vector<Real>({0.0}),
+                                     "Form loss coefficient of subchannels affected by blockage");
+
   params.addParam<Real>("Kij", 0.5, "Lateral form loss coefficient [-]");
   params.addRequiredParam<unsigned int>("n_cells", "The number of cells in the axial direction");
   params.addRequiredParam<unsigned int>("nx", "Number of channels in the x direction [-]");
@@ -56,6 +70,10 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
     _unheated_length_exit(getParam<Real>("unheated_length_exit")),
     _spacer_z(getParam<std::vector<Real>>("spacer_z")),
     _spacer_k(getParam<std::vector<Real>>("spacer_k")),
+    _z_blockage(getParam<std::vector<Real>>("z_blockage")),
+    _index_blockage(getParam<std::vector<unsigned int>>("index_blockage")),
+    _reduction_blockage(getParam<std::vector<Real>>("reduction_blockage")),
+    _k_blockage(getParam<std::vector<Real>>("k_blockage")),
     _kij(getParam<Real>("Kij")),
     _pitch(getParam<Real>("pitch")),
     _rod_diameter(getParam<Real>("rod_diameter")),
@@ -74,6 +92,30 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
   if (_spacer_z.back() > _unheated_length_entry + _heated_length + _unheated_length_exit)
     mooseError(name(), ": Location of spacers should be less than the total bundle length");
 
+  if (_z_blockage.size() != 2)
+    mooseError(name(), ": Size of vector z_blockage must be 2");
+
+  if (*max_element(_index_blockage.begin(), _index_blockage.end()) > (_n_channels - 1))
+    mooseError(name(),
+               ": The index of the blocked subchannel cannot be more than the max index of the "
+               "subchannels");
+
+  if (*max_element(_reduction_blockage.begin(), _reduction_blockage.end()) > 1)
+    mooseError(name(), ": The area reduction of the blocked subchannels cannot be more than 1");
+
+  if ((_index_blockage.size() > _nx * _ny) | (_reduction_blockage.size() > _nx * _ny) |
+      (_k_blockage.size() > _nx * _ny))
+    mooseError(name(),
+               ": Size of vectors: index_blockage, reduction_blockage, k_blockage, cannot be more "
+               "than the total number of subchannels");
+
+  if ((_index_blockage.size() != _reduction_blockage.size()) |
+      (_index_blockage.size() != _k_blockage.size()) |
+      (_reduction_blockage.size() != _k_blockage.size()))
+    mooseError(name(),
+               ": Size of vectors: index_blockage, reduction_blockage, k_blockage, must be equal "
+               "to eachother");
+
   if (_nx < 2 && _ny < 2)
     mooseError(name(),
                ": The number of subchannels cannot be less than 2 in both directions (x and y). "
@@ -82,22 +124,44 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
   // Defining the total length from 3 axial sections
   Real L = _unheated_length_entry + _heated_length + _unheated_length_exit;
 
-  // Defining the dz based in the total length and the specified number of axial cells
-  Real dz = L / _n_cells;
-  for (unsigned int i = 0; i < _n_cells + 1; i++)
-    _z_grid.push_back(dz * i);
-
   // Defining the position of the spacer grid in the numerical solution array
   std::vector<int> spacer_cell;
   for (const auto & elem : _spacer_z)
     spacer_cell.emplace_back(std::round(elem * _n_cells / L));
 
-  // Defining the array for axial resistances
-  _k_grid.resize(_n_cells + 1, 0.0);
+  // Defining the arrays for axial resistances
+  std::vector<Real> kgrid;
+  kgrid.resize(_n_cells + 1, 0.0);
+  _k_grid.resize(_n_channels, std::vector<Real>(_n_cells + 1));
 
-  // Summing the spacer resistance to the grid resistance array
+  // Summing the spacer resistance to the 1D grid resistance array
   for (unsigned int index = 0; index < spacer_cell.size(); index++)
-    _k_grid[spacer_cell[index]] += _spacer_k[index];
+    kgrid[spacer_cell[index]] += _spacer_k[index];
+
+  // Creating the 2D grid resistance array
+  for (unsigned int i = 0; i < _n_channels; i++)
+    _k_grid[i] = kgrid;
+
+  // Figure out how many axial layers are blocked
+  int axial_levels_blocked = std::round((_z_blockage.back() - _z_blockage.front()) * _n_cells / L);
+
+  // Add blockage resistance to the 2D grid resistane array
+  Real dz = L / _n_cells;
+  for (unsigned int i = 0; i < _n_cells + 1; i++)
+  {
+    // Defining the dz based in the total length and the specified number of axial cells
+    _z_grid.push_back(dz * i);
+    if ((dz * i >= _z_blockage.front() && dz * i <= _z_blockage.back()) &&
+        axial_levels_blocked != 0)
+    {
+      unsigned int index(0);
+      for (const auto & i_ch : _index_blockage)
+      {
+        _k_grid[i_ch][i] += (_k_blockage[index] / axial_levels_blocked);
+        index++;
+      }
+    }
+  }
 
   // Defining the size of the maps
   _gap_to_chan_map.resize(_n_gaps);
@@ -123,12 +187,23 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
                        (ix == 0 && iy == _ny - 1) || (ix == _nx - 1 && iy == _ny - 1);
       bool is_edge = (ix == 0 || iy == 0 || ix == _nx - 1 || iy == _ny - 1);
 
-      if (is_corner)
-        _subch_type[i_ch] = EChannelType::CORNER;
-      else if (is_edge)
-        _subch_type[i_ch] = EChannelType::EDGE;
-      else
+      if (_n_channels == 2)
+      {
         _subch_type[i_ch] = EChannelType::CENTER;
+      }
+      else if (_n_channels == 4)
+      {
+        _subch_type[i_ch] = EChannelType::CORNER;
+      }
+      else
+      {
+        if (is_corner)
+          _subch_type[i_ch] = EChannelType::CORNER;
+        else if (is_edge)
+          _subch_type[i_ch] = EChannelType::EDGE;
+        else
+          _subch_type[i_ch] = EChannelType::CENTER;
+      }
     }
   }
 
@@ -335,6 +410,9 @@ QuadSubChannelMeshGenerator::generate()
   sch_mesh->_k_grid = _k_grid;
   sch_mesh->_spacer_z = _spacer_z;
   sch_mesh->_spacer_k = _spacer_k;
+  sch_mesh->_z_blockage = _z_blockage;
+  sch_mesh->_index_blockage = _index_blockage;
+  sch_mesh->_reduction_blockage = _reduction_blockage;
   sch_mesh->_kij = _kij;
   sch_mesh->_pitch = _pitch;
   sch_mesh->_rod_diameter = _rod_diameter;

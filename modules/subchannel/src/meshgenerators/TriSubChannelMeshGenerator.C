@@ -25,6 +25,19 @@ TriSubChannelMeshGenerator::validParams()
                                              "Axial location of spacers/vanes/mixing_vanes [m]");
   params.addRequiredParam<std::vector<Real>>(
       "spacer_k", "K-loss coefficient of spacers/vanes/mixing_vanes [-]");
+  params.addParam<std::vector<Real>>("z_blockage",
+                                     std::vector<Real>({0.0, 0.0}),
+                                     "axial location of blockage (inlet, outlet) [m]");
+  params.addParam<std::vector<unsigned int>>("index_blockage",
+                                             std::vector<unsigned int>({0}),
+                                             "index of subchannels affected by blockage");
+  params.addParam<std::vector<Real>>(
+      "reduction_blockage",
+      std::vector<Real>({1.0}),
+      "Area reduction of subchannels affected by blockage (number to muliply the area)");
+  params.addParam<std::vector<Real>>("k_blockage",
+                                     std::vector<Real>({0.0}),
+                                     "Form loss coefficient of subchannels affected by blockage");
   params.addParam<unsigned int>("block_id", 0, "Domain Index");
   return params;
 }
@@ -37,6 +50,10 @@ TriSubChannelMeshGenerator::TriSubChannelMeshGenerator(const InputParameters & p
     _block_id(getParam<unsigned int>("block_id")),
     _spacer_z(getParam<std::vector<Real>>("spacer_z")),
     _spacer_k(getParam<std::vector<Real>>("spacer_k")),
+    _z_blockage(getParam<std::vector<Real>>("z_blockage")),
+    _index_blockage(getParam<std::vector<unsigned int>>("index_blockage")),
+    _reduction_blockage(getParam<std::vector<Real>>("reduction_blockage")),
+    _k_blockage(getParam<std::vector<Real>>("k_blockage")),
     _pitch(getParam<Real>("pitch")),
     _rod_diameter(getParam<Real>("rod_diameter")),
     _n_cells(getParam<unsigned int>("n_cells")),
@@ -53,18 +70,37 @@ TriSubChannelMeshGenerator::TriSubChannelMeshGenerator(const InputParameters & p
   if (_spacer_z.back() > _unheated_length_entry + _heated_length + _unheated_length_exit)
     mooseError(name(), ": Location of spacers should be less than the total bundle length");
 
+  if (_z_blockage.size() != 2)
+    mooseError(name(), ": Size of vector z_blockage must be 2");
+
+  if (*max_element(_reduction_blockage.begin(), _reduction_blockage.end()) > 1)
+    mooseError(name(), ": The area reduction of the blocked subchannels cannot be more than 1");
+
+  if ((_index_blockage.size() != _reduction_blockage.size()) |
+      (_index_blockage.size() != _k_blockage.size()) |
+      (_reduction_blockage.size() != _k_blockage.size()))
+    mooseError(name(),
+               ": Size of vectors: index_blockage, reduction_blockage, k_blockage, must be equal "
+               "to eachother");
+
   SubChannelMesh::generateZGrid(
       _unheated_length_entry, _heated_length, _unheated_length_exit, _n_cells, _z_grid);
 
+  // Defining the total length from 3 axial sections
   Real L = _unheated_length_entry + _heated_length + _unheated_length_exit;
+
+  // Defining the position of the spacer grid in the numerical solution array
   std::vector<int> spacer_cell;
   for (const auto & elem : _spacer_z)
     spacer_cell.emplace_back(std::round(elem * _n_cells / L));
 
-  _k_grid.resize(_n_cells + 1, 0.0);
+  // Defining the array for axial resistances
+  std::vector<Real> kgrid;
+  kgrid.resize(_n_cells + 1, 0.0);
 
+  // Summing the spacer resistance to the grid resistance array
   for (unsigned int index = 0; index < spacer_cell.size(); index++)
-    _k_grid[spacer_cell[index]] += _spacer_k[index];
+    kgrid[spacer_cell[index]] += _spacer_k[index];
 
   //  compute the hex mesh variables
   // -------------------------------------------
@@ -116,6 +152,41 @@ TriSubChannelMeshGenerator::TriSubChannelMeshGenerator(const InputParameters & p
     chancount += j * 6;
   // Adding external channels to the total count
   _n_channels = chancount + _nrods - 1 + (_n_rings - 1) * 6 + 6;
+
+  if (*max_element(_index_blockage.begin(), _index_blockage.end()) > (_n_channels - 1))
+    mooseError(name(),
+               ": The index of the blocked subchannel cannot be more than the max index of the "
+               "subchannels");
+
+  if ((_index_blockage.size() > _n_channels) | (_reduction_blockage.size() > _n_channels) |
+      (_k_blockage.size() > _n_channels))
+    mooseError(name(),
+               ": Size of vectors: index_blockage, reduction_blockage, k_blockage, cannot be more "
+               "than the total number of subchannels");
+
+  // Defining the 2D array for axial resistances
+  _k_grid.resize(_n_channels, std::vector<Real>(_n_cells + 1));
+  for (unsigned int i = 0; i < _n_channels; i++)
+    _k_grid[i] = kgrid;
+
+  // Figure out how many axial layers are blocked (Cell size should be less than blockage size)
+  int axial_levels_blocked = std::round((_z_blockage.back() - _z_blockage.front()) * _n_cells / L);
+
+  // Add blockage resistance to the 2D grid resistane array
+  Real dz = L / _n_cells;
+  for (unsigned int i = 0; i < _n_cells + 1; i++)
+  {
+    if ((dz * i >= _z_blockage.front() && dz * i <= _z_blockage.back()) &&
+        axial_levels_blocked != 0)
+    {
+      unsigned int index(0);
+      for (const auto & i_ch : _index_blockage)
+      {
+        _k_grid[i_ch][i] += (_k_blockage[index] / axial_levels_blocked);
+        index++;
+      }
+    }
+  }
 
   _subchannel_to_rod_map.resize(_n_channels);
   _pin_to_chan_map.resize(_nrods);
@@ -719,6 +790,9 @@ TriSubChannelMeshGenerator::generate()
   sch_mesh->_k_grid = _k_grid;
   sch_mesh->_spacer_z = _spacer_z;
   sch_mesh->_spacer_k = _spacer_k;
+  sch_mesh->_z_blockage = _z_blockage;
+  sch_mesh->_index_blockage = _index_blockage;
+  sch_mesh->_reduction_blockage = _reduction_blockage;
   sch_mesh->_pitch = _pitch;
   sch_mesh->_rod_diameter = _rod_diameter;
   sch_mesh->_n_cells = _n_cells;

@@ -58,7 +58,7 @@ P_out = 4.923e6 # Pa
   [q_prime_IC]
     type = QuadPowerIC
     variable = q_prime
-    power = 1e6 # W
+    power = 0.0 # W
     filename = "power_profile.txt"
   []
 
@@ -120,9 +120,10 @@ P_out = 4.923e6 # Pa
     execute_on = 'timestep_begin'
   []
   [mdot_in_bc]
-    type = MassFlowRateAux
+    type = BlockedMassFlowRateAux
     variable = mdot
     boundary = inlet
+    # index_blockage = ' 0 '
     area = S
     mass_flux = ${mass_flux_in}
     execute_on = 'timestep_begin'

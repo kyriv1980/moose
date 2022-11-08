@@ -23,14 +23,31 @@ LiquidMetalSubChannel1PhaseProblem::LiquidMetalSubChannel1PhaseProblem(
     if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
       _outer_channels += 1.0;
   }
+
+  // Initializing heat conduction system
+  createPetscMatrix(
+      _hc_axial_heat_conduction_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_axial_heat_conduction_rhs, _block_size * _n_channels);
+  createPetscMatrix(
+      _hc_radial_heat_conduction_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_radial_heat_conduction_rhs, _block_size * _n_channels);
+  createPetscMatrix(_hc_sweep_enthalpy_mat, _block_size * _n_channels, _block_size * _n_channels);
+  createPetscVector(_hc_sweep_enthalpy_rhs, _block_size * _n_channels);
 }
 
 double
 LiquidMetalSubChannel1PhaseProblem::computeFrictionFactor(double Re)
 {
   _console << "Re number= " << Re << std::endl;
-  mooseError(name(),
-             ": This option for the friction factor is not currently used for sodium coolant");
+  mooseError("This option for the friction factor is not currently used for sodium coolant");
+  return 0;
+}
+
+double
+LiquidMetalSubChannel1PhaseProblem::computeFrictionFactor(double Re, int /* i_ch */)
+{
+  _console << "Re number= " << Re << std::endl;
+  mooseError("This option for the friction factor is not currently used for sodium coolant");
   return 0;
 }
 
@@ -363,7 +380,7 @@ LiquidMetalSubChannel1PhaseProblem::computeDP(int iblock)
 
         auto Re = (((*_mdot_soln)(node_in) / S) * Dh_i / mu_in);
         auto fi = computeFrictionFactor(Re, i_ch, S, w_perim, Dh_i);
-        auto ki = k_grid[iz - 1];
+        auto ki = k_grid[i_ch][iz - 1];
         auto friction_term = (fi * dz / Dh_i + ki) * 0.5 *
                              (std::pow((*_mdot_soln)(node_out), 2.0)) /
                              (S * (*_rho_soln)(node_out));
@@ -621,7 +638,8 @@ LiquidMetalSubChannel1PhaseProblem::computeDP(int iblock)
             (*_mdot_soln)(node_out), (*_mdot_soln)(node_in), "central_difference", Pe);
         auto Re = ((mdot_interp / S_interp) * Dh_i / mu_interp);
         auto fi = computeFrictionFactor(Re, i_ch, S_interp, w_perim_interp, Dh_i);
-        auto ki = computeInterpolatedValue(k_grid[iz], k_grid[iz - 1], "central_difference", Pe);
+        auto ki = computeInterpolatedValue(
+            k_grid[i_ch][iz], k_grid[i_ch][iz - 1], "central_difference", Pe);
         auto coef = (fi * dz / Dh_i + ki) * 0.5 * std::abs((*_mdot_soln)(node_out)) /
                     (S_interp * rho_interp);
         if (iz == first_node)
@@ -917,190 +935,745 @@ LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
     }
   }
 
-  for (unsigned int iz = first_node; iz < last_node + 1; iz++)
+  if (!_implicit_bool)
   {
-    auto z_grid = _subchannel_mesh.getZGrid();
-    auto dz = z_grid[iz] - z_grid[iz - 1];
-    auto heated_length = _subchannel_mesh.getHeatedLength();
-    auto unheated_length_entry = _subchannel_mesh.getHeatedLengthEntry();
-
-    Real gedge_ave = 0.0;
-    Real mdot_sum = 0.0;
-    Real si_sum = 0.0;
-    for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+    for (unsigned int iz = first_node; iz < last_node + 1; iz++)
     {
-      auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
-      if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
+      auto z_grid = _subchannel_mesh.getZGrid();
+      auto dz = z_grid[iz] - z_grid[iz - 1];
+      auto heated_length = _subchannel_mesh.getHeatedLength();
+      auto unheated_length_entry = _subchannel_mesh.getHeatedLengthEntry();
+
+      Real gedge_ave = 0.0;
+      Real mdot_sum = 0.0;
+      Real si_sum = 0.0;
+      for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
       {
-        auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
-        auto Si = (*_S_flow_soln)(node_in);
-        auto mdot_in = (*_mdot_soln)(node_in);
-        mdot_sum = mdot_sum + mdot_in;
-        si_sum = si_sum + Si;
+        auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+        if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
+        {
+          auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+          auto Si = (*_S_flow_soln)(node_in);
+          auto mdot_in = (*_mdot_soln)(node_in);
+          mdot_sum = mdot_sum + mdot_in;
+          si_sum = si_sum + Si;
+        }
       }
-    }
-    gedge_ave = mdot_sum / si_sum;
+      gedge_ave = mdot_sum / si_sum;
 
-    for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
-    {
-      const Real & pitch = _subchannel_mesh.getPitch();
-      const Real & rod_diameter = _subchannel_mesh.getRodDiameter();
-      auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
-      auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
-      auto mdot_in = (*_mdot_soln)(node_in);
-      auto h_in = (*_h_soln)(node_in); // J/kg
-      auto volume = dz * (*_S_flow_soln)(node_in);
-      auto mdot_out = (*_mdot_soln)(node_out);
-      auto h_out = 0.0;
-      double sumWijh = 0.0;
-      double sumWijPrimeDhij = 0.0;
-      Real e_cond = 0.0;
-
-      double added_enthalpy;
-      if (z_grid[iz] > unheated_length_entry && z_grid[iz] <= unheated_length_entry + heated_length)
-      {
-        // added_enthalpy = ((*_q_prime_soln)(node_out) + (*_q_prime_soln)(node_in)) * dz / 2.0;
-        added_enthalpy = computeAddedHeatPin(i_ch, iz);
-      }
-      else
-        added_enthalpy = 0.0;
-
-      added_enthalpy += computeAddedHeatDuct(i_ch, iz);
-
-      // compute the sweep flow enthalpy change
-      auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
-      Real sweep_enthalpy = 0.0;
-
-      if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
+      for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
       {
         const Real & pitch = _subchannel_mesh.getPitch();
         const Real & rod_diameter = _subchannel_mesh.getRodDiameter();
-        const Real & wire_lead_length = _tri_sch_mesh.getWireLeadLength();
-        const Real & wire_diameter = _tri_sch_mesh.getWireDiameter();
-        auto gap = _tri_sch_mesh.getDuctToRodGap();
-        auto w = rod_diameter + gap;
-        auto theta =
-            std::acos(wire_lead_length /
-                      std::sqrt(std::pow(wire_lead_length, 2) +
-                                std::pow(libMesh::pi * (rod_diameter + wire_diameter), 2)));
-        // in/out channels for i_ch
-        auto sweep_in = _tri_sch_mesh.getSweepFlowChans(i_ch).first;
-        auto * node_sin = _subchannel_mesh.getChannelNode(sweep_in, iz - 1);
-        auto cs_t = 0.75 * std::pow(wire_lead_length / rod_diameter, 0.3);
-        auto ar2 = libMesh::pi * (rod_diameter + wire_diameter) * wire_diameter / 4.0;
-        auto a2p = pitch * (w - rod_diameter / 2.0) - libMesh::pi * std::pow(rod_diameter, 2) / 8.0;
-        auto Sij_in = dz * gap;
-        auto Sij_out = dz * gap;
-        auto wsweep_in = gedge_ave * cs_t * std::pow((ar2 / a2p), 0.5) * std::tan(theta) * Sij_in;
-        auto wsweep_out = gedge_ave * cs_t * std::pow((ar2 / a2p), 0.5) * std::tan(theta) * Sij_out;
-        auto sweep_hin = (*_h_soln)(node_sin);
-        auto sweep_hout = (*_h_soln)(node_in);
-        sweep_enthalpy = (wsweep_in * sweep_hin - wsweep_out * sweep_hout);
-      }
+        auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+        auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
+        auto mdot_in = (*_mdot_soln)(node_in);
+        auto h_in = (*_h_soln)(node_in); // J/kg
+        auto volume = dz * (*_S_flow_soln)(node_in);
+        auto mdot_out = (*_mdot_soln)(node_out);
+        auto h_out = 0.0;
+        double sumWijh = 0.0;
+        double sumWijPrimeDhij = 0.0;
+        Real e_cond = 0.0;
 
-      // Calculate sum of crossflow into channel i from channels j around i
-      unsigned int counter = 0;
-      for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
-      {
-        auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
-        unsigned int ii_ch = chans.first;
-        // i is always the smallest and first index in the mapping
-        unsigned int jj_ch = chans.second;
-        auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
-        auto * node_in_j = _subchannel_mesh.getChannelNode(jj_ch, iz - 1);
-        // Define donor enthalpy
-        auto h_star = 0.0;
-        if (_Wij(i_gap, iz) > 0.0)
-          h_star = (*_h_soln)(node_in_i);
-        else if (_Wij(i_gap, iz) < 0.0)
-          h_star = (*_h_soln)(node_in_j);
-        // take care of the sign by applying the map, use donor cell
-        sumWijh += _subchannel_mesh.getCrossflowSign(i_ch, counter) * _Wij(i_gap, iz) * h_star;
-        sumWijPrimeDhij += _WijPrime(i_gap, iz) * (2 * (*_h_soln)(node_in) - (*_h_soln)(node_in_j) -
-                                                   (*_h_soln)(node_in_i));
-        counter++;
-
-        // compute the radial heat conduction through the gaps
-
-        // compute the radial heat conduction through gaps
-        auto subch_type_i = _subchannel_mesh.getSubchannelType(ii_ch);
-        auto subch_type_j = _subchannel_mesh.getSubchannelType(jj_ch);
-        Real dist_ij = pitch;
-
-        if (subch_type_i == EChannelType::EDGE && subch_type_j == EChannelType::EDGE)
+        double added_enthalpy;
+        if (z_grid[iz] > unheated_length_entry &&
+            z_grid[iz] <= unheated_length_entry + heated_length)
         {
-          dist_ij = pitch;
-        }
-        else if ((subch_type_i == EChannelType::CORNER && subch_type_j == EChannelType::EDGE) ||
-                 (subch_type_i == EChannelType::EDGE && subch_type_j == EChannelType::CORNER))
-        {
-          dist_ij = pitch;
+          // added_enthalpy = ((*_q_prime_soln)(node_out) + (*_q_prime_soln)(node_in)) * dz / 2.0;
+          added_enthalpy = computeAddedHeatPin(i_ch, iz);
         }
         else
+          added_enthalpy = 0.0;
+
+        added_enthalpy += computeAddedHeatDuct(i_ch, iz);
+
+        // compute the sweep flow enthalpy change
+        auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+        Real sweep_enthalpy = 0.0;
+
+        if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
         {
-          dist_ij = pitch / std::sqrt(3);
+          const Real & pitch = _subchannel_mesh.getPitch();
+          const Real & rod_diameter = _subchannel_mesh.getRodDiameter();
+          const Real & wire_lead_length = _tri_sch_mesh.getWireLeadLength();
+          const Real & wire_diameter = _tri_sch_mesh.getWireDiameter();
+          auto gap = _tri_sch_mesh.getDuctToRodGap();
+          auto w = rod_diameter + gap;
+          auto theta =
+              std::acos(wire_lead_length /
+                        std::sqrt(std::pow(wire_lead_length, 2) +
+                                  std::pow(libMesh::pi * (rod_diameter + wire_diameter), 2)));
+          // in/out channels for i_ch
+          auto sweep_in = _tri_sch_mesh.getSweepFlowChans(i_ch).first;
+          auto * node_sin = _subchannel_mesh.getChannelNode(sweep_in, iz - 1);
+          auto cs_t = 0.75 * std::pow(wire_lead_length / rod_diameter, 0.3);
+          auto ar2 = libMesh::pi * (rod_diameter + wire_diameter) * wire_diameter / 4.0;
+          auto a2p =
+              pitch * (w - rod_diameter / 2.0) - libMesh::pi * std::pow(rod_diameter, 2) / 8.0;
+          auto Sij_in = dz * gap;
+          auto Sij_out = dz * gap;
+          auto wsweep_in = gedge_ave * cs_t * std::pow((ar2 / a2p), 0.5) * std::tan(theta) * Sij_in;
+          auto wsweep_out =
+              gedge_ave * cs_t * std::pow((ar2 / a2p), 0.5) * std::tan(theta) * Sij_out;
+          auto sweep_hin = (*_h_soln)(node_sin);
+          auto sweep_hout = (*_h_soln)(node_in);
+          sweep_enthalpy = (wsweep_in * sweep_hin - wsweep_out * sweep_hout);
         }
 
-        auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
-        auto thcon_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
-        auto thcon_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
-        auto shape_factor = 0.66 * (pitch / rod_diameter) *
-                            std::pow((_subchannel_mesh.getGapWidth(i_gap) / rod_diameter), -0.3);
-        if (ii_ch == i_ch)
+        // Calculate sum of crossflow into channel i from channels j around i
+        unsigned int counter = 0;
+        for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          e_cond += 0.5 * (thcon_i + thcon_j) * Sij * shape_factor *
-                    ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) / dist_ij;
+          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          unsigned int ii_ch = chans.first;
+          // i is always the smallest and first index in the mapping
+          unsigned int jj_ch = chans.second;
+          auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
+          auto * node_in_j = _subchannel_mesh.getChannelNode(jj_ch, iz - 1);
+          // Define donor enthalpy
+          auto h_star = 0.0;
+          if (_Wij(i_gap, iz) > 0.0)
+            h_star = (*_h_soln)(node_in_i);
+          else if (_Wij(i_gap, iz) < 0.0)
+            h_star = (*_h_soln)(node_in_j);
+          // take care of the sign by applying the map, use donor cell
+          sumWijh += _subchannel_mesh.getCrossflowSign(i_ch, counter) * _Wij(i_gap, iz) * h_star;
+          sumWijPrimeDhij += _WijPrime(i_gap, iz) * (2 * (*_h_soln)(node_in) -
+                                                     (*_h_soln)(node_in_j) - (*_h_soln)(node_in_i));
+          counter++;
+
+          // compute the radial heat conduction through the gaps
+
+          // compute the radial heat conduction through gaps
+          auto subch_type_i = _subchannel_mesh.getSubchannelType(ii_ch);
+          auto subch_type_j = _subchannel_mesh.getSubchannelType(jj_ch);
+          Real dist_ij = pitch;
+
+          if (subch_type_i == EChannelType::EDGE && subch_type_j == EChannelType::EDGE)
+          {
+            dist_ij = pitch;
+          }
+          else if ((subch_type_i == EChannelType::CORNER && subch_type_j == EChannelType::EDGE) ||
+                   (subch_type_i == EChannelType::EDGE && subch_type_j == EChannelType::CORNER))
+          {
+            dist_ij = pitch;
+          }
+          else
+          {
+            dist_ij = pitch / std::sqrt(3);
+          }
+
+          auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
+          auto thcon_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
+          auto thcon_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
+          auto shape_factor = 0.66 * (pitch / rod_diameter) *
+                              std::pow((_subchannel_mesh.getGapWidth(i_gap) / rod_diameter), -0.3);
+          if (ii_ch == i_ch)
+          {
+            e_cond += 0.5 * (thcon_i + thcon_j) * Sij * shape_factor *
+                      ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) / dist_ij;
+          }
+          else
+          {
+            e_cond += -0.5 * (thcon_i + thcon_j) * Sij * shape_factor *
+                      ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) / dist_ij;
+          }
         }
-        else
-        {
-          e_cond += -0.5 * (thcon_i + thcon_j) * Sij * shape_factor *
-                    ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) / dist_ij;
-        }
-      }
 
-      // compute the axial heat conduction between current and lower axial node
-      auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz);
-      auto * node_in_j = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
-      auto thcon_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
-      auto thcon_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
-      auto Si = (*_S_flow_soln)(node_in_i);
-      auto dist_ij = z_grid[iz] - z_grid[iz - 1];
-
-      e_cond += 0.5 * (thcon_i + thcon_j) * Si * ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) /
-                dist_ij;
-
-      unsigned int nz = _subchannel_mesh.getNumOfAxialCells();
-      // compute the axial heat conduction between current and upper axial node
-      if (iz < nz)
-      {
-
+        // compute the axial heat conduction between current and lower axial node
         auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz);
-        auto * node_in_j = _subchannel_mesh.getChannelNode(i_ch, iz + 1);
+        auto * node_in_j = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
         auto thcon_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
         auto thcon_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
         auto Si = (*_S_flow_soln)(node_in_i);
-        auto dist_ij = z_grid[iz + 1] - z_grid[iz];
+        auto dist_ij = z_grid[iz] - z_grid[iz - 1];
+
         e_cond += 0.5 * (thcon_i + thcon_j) * Si * ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) /
                   dist_ij;
+
+        unsigned int nz = _subchannel_mesh.getNumOfAxialCells();
+        // compute the axial heat conduction between current and upper axial node
+        if (iz < nz)
+        {
+          auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz);
+          auto * node_in_j = _subchannel_mesh.getChannelNode(i_ch, iz + 1);
+          auto thcon_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
+          auto thcon_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
+          auto Si = (*_S_flow_soln)(node_in_i);
+          auto dist_ij = z_grid[iz + 1] - z_grid[iz];
+          e_cond += 0.5 * (thcon_i + thcon_j) * Si *
+                    ((*_T_soln)(node_in_j) - (*_T_soln)(node_in_i)) / dist_ij;
+        }
+
+        // end of radial heat conduction calc.
+        h_out =
+            (mdot_in * h_in - sumWijh - sumWijPrimeDhij + added_enthalpy + e_cond + sweep_enthalpy +
+             _TR * _rho_soln->old(node_out) * _h_soln->old(node_out) * volume / _dt) /
+            (mdot_out + _TR * (*_rho_soln)(node_out)*volume / _dt);
+
+        if (h_out < 0)
+        {
+          _console << "Wij = : " << _Wij << "\n";
+          mooseError(name(),
+                     " : Calculation of negative Enthalpy h_out = : ",
+                     h_out,
+                     " Axial Level= : ",
+                     iz);
+        }
+        _h_soln->set(node_out, h_out); // J/kg
       }
+    }
+  }
+  else
+  {
+    MatZeroEntries(_hc_time_derivative_mat);
+    MatZeroEntries(_hc_advective_derivative_mat);
+    MatZeroEntries(_hc_cross_derivative_mat);
+    MatZeroEntries(_hc_axial_heat_conduction_mat);
+    MatZeroEntries(_hc_radial_heat_conduction_mat);
+    MatZeroEntries(_hc_sweep_enthalpy_mat);
 
-      // end of radial heat conduction calc.
+    VecZeroEntries(_hc_time_derivative_rhs);
+    VecZeroEntries(_hc_advective_derivative_rhs);
+    VecZeroEntries(_hc_cross_derivative_rhs);
+    VecZeroEntries(_hc_added_heat_rhs);
+    VecZeroEntries(_hc_axial_heat_conduction_rhs);
+    VecZeroEntries(_hc_radial_heat_conduction_rhs);
+    VecZeroEntries(_hc_sweep_enthalpy_rhs);
 
-      h_out =
-          (mdot_in * h_in - sumWijh - sumWijPrimeDhij + added_enthalpy + e_cond + sweep_enthalpy +
-           _TR * _rho_soln->old(node_out) * _h_soln->old(node_out) * volume / _dt) /
-          (mdot_out + _TR * (*_rho_soln)(node_out)*volume / _dt);
+    MatZeroEntries(_hc_sys_h_mat);
+    VecZeroEntries(_hc_sys_h_rhs);
 
-      if (h_out < 0)
+    for (unsigned int iz = first_node; iz < last_node + 1; iz++)
+    {
+      auto dz = _z_grid[iz] - _z_grid[iz - 1];
+      auto heated_length = _subchannel_mesh.getHeatedLength();
+      auto unheated_length_entry = _subchannel_mesh.getHeatedLengthEntry();
+      auto pitch = _subchannel_mesh.getPitch();
+      auto rod_diameter = _subchannel_mesh.getRodDiameter();
+      auto iz_ind = iz - first_node;
+
+      for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
       {
-        _console << "Wij = : " << _Wij << "\n";
-        mooseError(name(),
-                   " : Calculation of negative Enthalpy h_out = : ",
-                   h_out,
-                   " Axial Level= : ",
-                   iz);
+        auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+        auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
+        auto S_in = (*_S_flow_soln)(node_in);
+        auto S_out = (*_S_flow_soln)(node_out);
+
+        // interpolation weight coefficient
+        PetscScalar Pe = 0.5;
+        auto alpha = computeInterpolationCoefficients("central_difference", Pe);
+        auto S_interp = computeInterpolatedValue(S_in, S_out, "central_difference", Pe);
+        auto volume = dz * S_interp;
+
+        /// Time derivative term
+        if (iz == first_node)
+        {
+          PetscScalar value_vec_tt =
+              -1.0 * _TR * alpha * (*_rho_soln)(node_in) * (*_h_soln)(node_in)*volume / _dt;
+          PetscInt row_vec_tt = i_ch + _n_channels * iz_ind;
+          VecSetValues(_hc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
+        }
+        else
+        {
+          PetscInt row_tt = i_ch + _n_channels * iz_ind;
+          PetscInt col_tt = i_ch + _n_channels * (iz_ind - 1);
+          PetscScalar value_tt = _TR * alpha * (*_rho_soln)(node_in)*volume / _dt;
+          MatSetValues(_hc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
+        }
+
+        // Adding diagonal elements
+        PetscInt row_tt = i_ch + _n_channels * iz_ind;
+        PetscInt col_tt = i_ch + _n_channels * iz_ind;
+        PetscScalar value_tt = _TR * (1.0 - alpha) * (*_rho_soln)(node_out)*volume / _dt;
+        MatSetValues(_hc_time_derivative_mat, 1, &row_tt, 1, &col_tt, &value_tt, INSERT_VALUES);
+
+        // Adding RHS elements
+        PetscScalar rho_old_interp = computeInterpolatedValue(
+            _rho_soln->old(node_out), _rho_soln->old(node_in), "central_difference", Pe);
+        PetscScalar h_old_interp = computeInterpolatedValue(
+            _h_soln->old(node_out), _h_soln->old(node_in), "central_difference", Pe);
+        PetscScalar value_vec_tt = _TR * rho_old_interp * h_old_interp * volume / _dt;
+        PetscInt row_vec_tt = i_ch + _n_channels * iz_ind;
+        VecSetValues(_hc_time_derivative_rhs, 1, &row_vec_tt, &value_vec_tt, ADD_VALUES);
+
+        /// Advective derivative term
+        if (iz == first_node)
+        {
+          PetscScalar value_vec_at = (*_mdot_soln)(node_in) * (*_h_soln)(node_in);
+          PetscInt row_vec_at = i_ch + _n_channels * iz_ind;
+          VecSetValues(_hc_advective_derivative_rhs, 1, &row_vec_at, &value_vec_at, ADD_VALUES);
+        }
+        else if (iz == last_node)
+        {
+          PetscInt row_at = i_ch + _n_channels * iz_ind;
+          PetscInt col_at = i_ch + _n_channels * (iz_ind - 1);
+          PetscScalar value_at = -1.0 * (*_mdot_soln)(node_in);
+          MatSetValues(
+              _hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+        }
+        else
+        {
+          PetscInt row_at = i_ch + _n_channels * iz_ind;
+          PetscInt col_at = i_ch + _n_channels * (iz_ind - 1);
+          PetscScalar value_at = -1.0 * (*_mdot_soln)(node_in);
+          MatSetValues(
+              _hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+        }
+
+        // Adding diagonal elements
+        PetscInt row_at = i_ch + _n_channels * iz_ind;
+        PetscInt col_at = i_ch + _n_channels * iz_ind;
+        PetscScalar value_at = (*_mdot_soln)(node_out);
+        MatSetValues(
+            _hc_advective_derivative_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+
+        /// Axial heat conduction
+        auto * node_center = _subchannel_mesh.getChannelNode(i_ch, iz);
+        auto K_center = _fp->k_from_p_T((*_P_soln)(node_center), (*_T_soln)(node_center));
+        auto cp_center = _fp->cp_from_p_T((*_P_soln)(node_center), (*_T_soln)(node_center));
+        auto diff_center = K_center / (cp_center + 1e-15);
+
+        if (iz == first_node)
+        {
+          auto * node_top = _subchannel_mesh.getChannelNode(i_ch, iz + 1);
+          auto * node_bottom = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+          auto K_bottom = _fp->k_from_p_T((*_P_soln)(node_bottom), (*_T_soln)(node_bottom));
+          auto K_top = _fp->k_from_p_T((*_P_soln)(node_top), (*_T_soln)(node_top));
+          auto cp_bottom = _fp->cp_from_p_T((*_P_soln)(node_bottom), (*_T_soln)(node_bottom));
+          auto cp_top = _fp->cp_from_p_T((*_P_soln)(node_top), (*_T_soln)(node_top));
+          auto diff_bottom = K_bottom / (cp_bottom + 1e-15);
+          auto diff_top = K_top / (cp_top + 1e-15);
+
+          auto dz_up = _z_grid[iz + 1] - _z_grid[iz];
+          auto dz_down = _z_grid[iz] - _z_grid[iz - 1];
+          auto S_up = 0.5 * ((*_S_flow_soln)(node_top) + (*_S_flow_soln)(node_center)); // TODO:
+          auto S_down = 0.5 * ((*_S_flow_soln)(node_center) + (*_S_flow_soln)(node_bottom));
+          auto diff_up = 0.5 * (diff_top + diff_center);
+          auto diff_down = 0.5 * (diff_center + diff_bottom);
+
+          // Diagonal  value
+          PetscInt row_at = i_ch + _n_channels * iz_ind;
+          PetscInt col_at = i_ch + _n_channels * iz_ind;
+          PetscScalar value_at = diff_up * S_up / dz_up + diff_down * S_down / dz_down;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+
+          // Bottom value
+          value_at = 1.0 * diff_down * S_down / dz_down * (*_h_soln)(node_bottom);
+          VecSetValues(_hc_axial_heat_conduction_rhs, 1, &row_at, &value_at, ADD_VALUES);
+
+          // Top value
+          col_at = i_ch + _n_channels * (iz_ind + 1);
+          value_at = -diff_up * S_up / dz_up;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+        }
+        else if (iz == last_node)
+        {
+          auto * node_bottom = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+          auto K_bottom = _fp->k_from_p_T((*_P_soln)(node_bottom), (*_T_soln)(node_bottom));
+          auto cp_bottom = _fp->cp_from_p_T((*_P_soln)(node_bottom), (*_T_soln)(node_bottom));
+          auto diff_bottom = K_bottom / (cp_bottom + 1e-15);
+
+          auto dz_down = _z_grid[iz] - _z_grid[iz - 1];
+          auto S_down = 0.5 * ((*_S_flow_soln)(node_center) + (*_S_flow_soln)(node_bottom));
+          auto diff_down = 0.5 * (diff_center + diff_bottom);
+
+          // Diagonal  value
+          PetscInt row_at = i_ch + _n_channels * iz_ind;
+          PetscInt col_at = i_ch + _n_channels * iz_ind;
+          PetscScalar value_at = diff_down * S_down / dz_down;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+
+          // Bottom value
+          col_at = i_ch + _n_channels * (iz_ind - 1);
+          value_at = -diff_down * S_down / dz_down;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+
+          // Outflow derivative
+          /// TODO: Current axial derivative is zero - check if outflow conditions may make a difference
+          // value_at = -1.0 * (*_mdot_soln)(node_center) * (*_h_soln)(node_center);
+          // VecSetValues(_hc_axial_heat_conduction_rhs, 1, &row_at, &value_at, ADD_VALUES);
+        }
+        else
+        {
+          auto * node_top = _subchannel_mesh.getChannelNode(i_ch, iz + 1);
+          auto * node_bottom = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+          auto K_bottom = _fp->k_from_p_T((*_P_soln)(node_bottom), (*_T_soln)(node_bottom));
+          auto K_top = _fp->k_from_p_T((*_P_soln)(node_top), (*_T_soln)(node_top));
+          auto cp_bottom = _fp->cp_from_p_T((*_P_soln)(node_bottom), (*_T_soln)(node_bottom));
+          auto cp_top = _fp->cp_from_p_T((*_P_soln)(node_top), (*_T_soln)(node_top));
+          auto diff_bottom = K_bottom / (cp_bottom + 1e-15);
+          auto diff_top = K_top / (cp_top + 1e-15);
+
+          auto dz_up = _z_grid[iz + 1] - _z_grid[iz];
+          auto dz_down = _z_grid[iz] - _z_grid[iz - 1];
+          auto S_up = 0.5 * ((*_S_flow_soln)(node_top) + (*_S_flow_soln)(node_center)); // TODO:
+          auto S_down = 0.5 * ((*_S_flow_soln)(node_center) + (*_S_flow_soln)(node_bottom));
+          auto diff_up = 0.5 * (diff_top + diff_center);
+          auto diff_down = 0.5 * (diff_center + diff_bottom);
+
+          // Diagonal value
+          PetscInt row_at = i_ch + _n_channels * iz_ind;
+          PetscInt col_at = i_ch + _n_channels * iz_ind;
+          PetscScalar value_at = diff_up * S_up / dz_up + diff_down * S_down / dz_down;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+
+          // Bottom value
+          col_at = i_ch + _n_channels * (iz_ind - 1);
+          value_at = -diff_down * S_down / dz_down;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+
+          // Top value
+          col_at = i_ch + _n_channels * (iz_ind + 1);
+          value_at = -diff_up * S_up / dz_up;
+          MatSetValues(
+              _hc_axial_heat_conduction_mat, 1, &row_at, 1, &col_at, &value_at, INSERT_VALUES);
+        }
+
+        /// Radial Terms
+        unsigned int counter = 0;
+        unsigned int cross_index = iz;
+        // Real radial_heat_conduction(0.0);
+        for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
+        {
+          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          unsigned int ii_ch = chans.first;
+          unsigned int jj_ch = chans.second;
+          auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
+          auto * node_in_j = _subchannel_mesh.getChannelNode(jj_ch, iz - 1);
+          PetscScalar h_star;
+          // figure out donor axial velocity
+          if (_Wij(i_gap, cross_index) > 0.0)
+          {
+            if (iz == first_node)
+            {
+              h_star = (*_h_soln)(node_in_i);
+              PetscScalar value_vec_ct = -1.0 * alpha *
+                                         _subchannel_mesh.getCrossflowSign(i_ch, counter) *
+                                         _Wij(i_gap, cross_index) * h_star;
+              PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
+              VecSetValues(_hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+            }
+            else
+            {
+              PetscScalar value_ct = alpha * _subchannel_mesh.getCrossflowSign(i_ch, counter) *
+                                     _Wij(i_gap, cross_index);
+              PetscInt row_ct = i_ch + _n_channels * iz_ind;
+              PetscInt col_ct = ii_ch + _n_channels * (iz_ind - 1);
+              MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+            }
+            PetscScalar value_ct = (1.0 - alpha) *
+                                   _subchannel_mesh.getCrossflowSign(i_ch, counter) *
+                                   _Wij(i_gap, cross_index);
+            PetscInt row_ct = i_ch + _n_channels * iz_ind;
+            PetscInt col_ct = ii_ch + _n_channels * iz_ind;
+            MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+          }
+          else if (_Wij(i_gap, cross_index) < 0.0) // _Wij=0 operations not necessary
+          {
+            if (iz == first_node)
+            {
+              h_star = (*_h_soln)(node_in_j);
+              PetscScalar value_vec_ct = -1.0 * alpha *
+                                         _subchannel_mesh.getCrossflowSign(i_ch, counter) *
+                                         _Wij(i_gap, cross_index) * h_star;
+              PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
+              VecSetValues(_hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+            }
+            else
+            {
+              PetscScalar value_ct = alpha * _subchannel_mesh.getCrossflowSign(i_ch, counter) *
+                                     _Wij(i_gap, cross_index);
+              PetscInt row_ct = i_ch + _n_channels * iz_ind;
+              PetscInt col_ct = jj_ch + _n_channels * (iz_ind - 1);
+              MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+            }
+            PetscScalar value_ct = (1.0 - alpha) *
+                                   _subchannel_mesh.getCrossflowSign(i_ch, counter) *
+                                   _Wij(i_gap, cross_index);
+            PetscInt row_ct = i_ch + _n_channels * iz_ind;
+            PetscInt col_ct = jj_ch + _n_channels * iz_ind;
+            MatSetValues(_hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_ct, ADD_VALUES);
+          }
+
+          // Turbulent cross flows
+          if (iz == first_node)
+          {
+            PetscScalar value_vec_ct =
+                -2.0 * alpha * (*_h_soln)(node_in)*_WijPrime(i_gap, cross_index);
+            value_vec_ct += alpha * (*_h_soln)(node_in_j)*_WijPrime(i_gap, cross_index);
+            value_vec_ct += alpha * (*_h_soln)(node_in_i)*_WijPrime(i_gap, cross_index);
+            PetscInt row_vec_ct = i_ch + _n_channels * iz_ind;
+            VecSetValues(_hc_cross_derivative_rhs, 1, &row_vec_ct, &value_vec_ct, ADD_VALUES);
+          }
+          else
+          {
+            PetscScalar value_center_ct = 2.0 * alpha * _WijPrime(i_gap, cross_index);
+            PetscInt row_ct = i_ch + _n_channels * iz_ind;
+            PetscInt col_ct = i_ch + _n_channels * (iz_ind - 1);
+            MatSetValues(
+                _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
+
+            PetscScalar value_left_ct = -1.0 * alpha * _WijPrime(i_gap, cross_index);
+            row_ct = i_ch + _n_channels * iz_ind;
+            col_ct = jj_ch + _n_channels * (iz_ind - 1);
+            MatSetValues(
+                _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
+
+            PetscScalar value_right_ct = -1.0 * alpha * _WijPrime(i_gap, cross_index);
+            row_ct = i_ch + _n_channels * iz_ind;
+            col_ct = ii_ch + _n_channels * (iz_ind - 1);
+            MatSetValues(
+                _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
+          }
+          PetscScalar value_center_ct = 2.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index);
+          PetscInt row_ct = i_ch + _n_channels * iz_ind;
+          PetscInt col_ct = i_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_center_ct, ADD_VALUES);
+
+          PetscScalar value_left_ct = -1.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index);
+          row_ct = i_ch + _n_channels * iz_ind;
+          col_ct = jj_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_left_ct, ADD_VALUES);
+
+          PetscScalar value_right_ct = -1.0 * (1.0 - alpha) * _WijPrime(i_gap, cross_index);
+          row_ct = i_ch + _n_channels * iz_ind;
+          col_ct = ii_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_cross_derivative_mat, 1, &row_ct, 1, &col_ct, &value_right_ct, ADD_VALUES);
+
+          /// Radial heat conduction
+          auto subch_type_i = _subchannel_mesh.getSubchannelType(ii_ch);
+          auto subch_type_j = _subchannel_mesh.getSubchannelType(jj_ch);
+          Real dist_ij = pitch;
+
+          if (subch_type_i == EChannelType::EDGE && subch_type_j == EChannelType::EDGE)
+          {
+            dist_ij = pitch;
+          }
+          else if ((subch_type_i == EChannelType::CORNER && subch_type_j == EChannelType::EDGE) ||
+                   (subch_type_i == EChannelType::EDGE && subch_type_j == EChannelType::CORNER))
+          {
+            dist_ij = pitch;
+          }
+          else
+          {
+            dist_ij = pitch / std::sqrt(3);
+          }
+
+          auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
+          auto K_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
+          auto K_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
+          auto cp_i = _fp->cp_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
+          auto cp_j = _fp->cp_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
+          auto A_i = K_i / cp_i;
+          auto A_j = K_j / cp_j;
+          auto harm_A = 2.0 * A_i * A_j / (A_i + A_j);
+          auto shape_factor = 0.66 * (pitch / rod_diameter) *
+                              std::pow((_subchannel_mesh.getGapWidth(i_gap) / rod_diameter), -0.3);
+          // auto base_value =  0.5 * (A_i + A_j) * Sij * shape_factor / dist_ij;
+          auto base_value = harm_A * shape_factor * Sij / dist_ij;
+          auto neg_base_value = -1.0 * base_value;
+
+          row_ct = ii_ch + _n_channels * iz_ind;
+          col_ct = ii_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_radial_heat_conduction_mat, 1, &row_ct, 1, &col_ct, &base_value, ADD_VALUES);
+
+          row_ct = jj_ch + _n_channels * iz_ind;
+          col_ct = jj_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_radial_heat_conduction_mat, 1, &row_ct, 1, &col_ct, &base_value, ADD_VALUES);
+
+          row_ct = ii_ch + _n_channels * iz_ind;
+          col_ct = jj_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_radial_heat_conduction_mat, 1, &row_ct, 1, &col_ct, &neg_base_value, ADD_VALUES);
+
+          row_ct = jj_ch + _n_channels * iz_ind;
+          col_ct = ii_ch + _n_channels * iz_ind;
+          MatSetValues(
+              _hc_radial_heat_conduction_mat, 1, &row_ct, 1, &col_ct, &neg_base_value, ADD_VALUES);
+          counter++;
+        }
+
+        // compute the sweep flow enthalpy change
+        Real gedge_ave = 0.0;
+        Real mdot_sum = 0.0;
+        Real si_sum = 0.0;
+        for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+        {
+          auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+          if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
+          {
+            auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+            auto Si = (*_S_flow_soln)(node_in);
+            auto mdot_in = (*_mdot_soln)(node_in);
+            mdot_sum = mdot_sum + mdot_in;
+            si_sum = si_sum + Si;
+          }
+        }
+        gedge_ave = mdot_sum / si_sum;
+        auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+        PetscScalar sweep_enthalpy = 0.0;
+        if (subch_type == EChannelType::EDGE || subch_type == EChannelType::CORNER)
+        {
+          const Real & pitch = _subchannel_mesh.getPitch();
+          const Real & rod_diameter = _subchannel_mesh.getRodDiameter();
+          const Real & wire_lead_length = _tri_sch_mesh.getWireLeadLength();
+          const Real & wire_diameter = _tri_sch_mesh.getWireDiameter();
+          auto gap = _tri_sch_mesh.getDuctToRodGap();
+          auto w = rod_diameter + gap;
+          auto theta =
+              std::acos(wire_lead_length /
+                        std::sqrt(std::pow(wire_lead_length, 2) +
+                                  std::pow(libMesh::pi * (rod_diameter + wire_diameter), 2)));
+          // in/out channels for i_ch
+          auto sweep_in = _tri_sch_mesh.getSweepFlowChans(i_ch).first;
+          auto * node_sin = _subchannel_mesh.getChannelNode(sweep_in, iz - 1);
+          auto cs_t = 0.75 * std::pow(wire_lead_length / rod_diameter, 0.3);
+          auto ar2 = libMesh::pi * (rod_diameter + wire_diameter) * wire_diameter / 4.0;
+          auto a2p =
+              pitch * (w - rod_diameter / 2.0) - libMesh::pi * std::pow(rod_diameter, 2) / 8.0;
+          auto Sij_in = dz * gap;
+          auto Sij_out = dz * gap;
+          auto wsweep_in = gedge_ave * cs_t * std::pow((ar2 / a2p), 0.5) * std::tan(theta) * Sij_in;
+          auto wsweep_out =
+              gedge_ave * cs_t * std::pow((ar2 / a2p), 0.5) * std::tan(theta) * Sij_out;
+          auto sweep_hin = (*_h_soln)(node_sin);
+          auto sweep_hout = (*_h_soln)(node_in);
+          sweep_enthalpy = (wsweep_in * sweep_hin - wsweep_out * sweep_hout);
+
+          if (iz == first_node)
+          {
+            PetscInt row_sh = i_ch + _n_channels * iz_ind;
+            PetscScalar value_hs = -sweep_enthalpy;
+            VecSetValues(_hc_sweep_enthalpy_rhs, 1, &row_sh, &value_hs, ADD_VALUES);
+          }
+          else
+          {
+            PetscInt row_sh = i_ch + _n_channels * (iz_ind - 1);
+            PetscInt col_sh = i_ch + _n_channels * (iz_ind - 1);
+            MatSetValues(_hc_sweep_enthalpy_mat, 1, &row_sh, 1, &col_sh, &wsweep_out, ADD_VALUES);
+            PetscInt col_sh_l = sweep_in + _n_channels * (iz_ind - 1);
+            PetscScalar neg_sweep_in = -1.0 * wsweep_in;
+            MatSetValues(
+                _hc_sweep_enthalpy_mat, 1, &row_sh, 1, &col_sh_l, &(neg_sweep_in), ADD_VALUES);
+          }
+        }
+
+        /// Add heat enthalpy from pin
+        PetscScalar added_enthalpy;
+        if (_z_grid[iz] > unheated_length_entry &&
+            _z_grid[iz] <= unheated_length_entry + heated_length)
+          added_enthalpy = computeAddedHeatPin(i_ch, iz);
+        else
+          added_enthalpy = 0.0;
+        PetscInt row_vec_ht = i_ch + _n_channels * iz_ind;
+        VecSetValues(_hc_added_heat_rhs, 1, &row_vec_ht, &added_enthalpy, ADD_VALUES);
       }
-      _h_soln->set(node_out, h_out); // J/kg
+    }
+    /// Assembling system
+    MatAssemblyBegin(_hc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_time_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_advective_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_cross_derivative_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_axial_heat_conduction_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_axial_heat_conduction_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_radial_heat_conduction_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_radial_heat_conduction_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_sweep_enthalpy_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sweep_enthalpy_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    // Matrix
+    // #if !PETSC_VERSION_LESS_THAN(3, 15, 0)
+    //   MatAXPY(_hc_sys_h_mat, 1.0, _hc_time_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    //   MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAXPY(_hc_sys_h_mat, 1.0, _hc_advective_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    //   MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAXPY(_hc_sys_h_mat, 1.0, _hc_cross_derivative_mat, UNKNOWN_NONZERO_PATTERN);
+    //   MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAXPY(_hc_sys_h_mat, 1.0, _hc_axial_heat_conduction_mat, UNKNOWN_NONZERO_PATTERN);
+    //   MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    //   MatAXPY(_hc_sys_h_mat, 1.0, _hc_radial_heat_conduction_mat, UNKNOWN_NONZERO_PATTERN);
+    // #else
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_time_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_advective_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_cross_derivative_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_axial_heat_conduction_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_radial_heat_conduction_mat, DIFFERENT_NONZERO_PATTERN);
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAXPY(_hc_sys_h_mat, 1.0, _hc_sweep_enthalpy_mat, DIFFERENT_NONZERO_PATTERN);
+    // #endif
+    MatAssemblyBegin(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    MatAssemblyEnd(_hc_sys_h_mat, MAT_FINAL_ASSEMBLY);
+    if (_verbose_subchannel)
+      _console << "Block: " << iblock << " - Enthalpy conservation matrix assembled" << std::endl;
+    // RHS
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_time_derivative_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_advective_derivative_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_cross_derivative_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_added_heat_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_axial_heat_conduction_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_radial_heat_conduction_rhs);
+    VecAXPY(_hc_sys_h_rhs, 1.0, _hc_sweep_enthalpy_rhs);
+
+    // MatView(_hc_sys_h_mat, PETSC_VIEWER_STDOUT_WORLD);
+    // VecView(_hc_sys_h_rhs, PETSC_VIEWER_STDOUT_WORLD);
+
+    if (_segregated_bool || (!_monolithic_thermal_bool))
+    {
+      // Assembly the matrix system
+      KSP ksploc;
+      PC pc;
+      Vec sol;
+      VecDuplicate(_hc_sys_h_rhs, &sol);
+      KSPCreate(PETSC_COMM_WORLD, &ksploc);
+      KSPSetOperators(ksploc, _hc_sys_h_mat, _hc_sys_h_mat);
+      KSPGetPC(ksploc, &pc);
+      PCSetType(pc, PCJACOBI);
+      KSPSetTolerances(ksploc, _rtol, _atol, _dtol, _maxit);
+      KSPSetFromOptions(ksploc);
+      KSPSolve(ksploc, _hc_sys_h_rhs, sol);
+      // VecView(sol, PETSC_VIEWER_STDOUT_WORLD);
+      PetscScalar * xx;
+      VecGetArray(sol, &xx);
+      for (unsigned int iz = first_node; iz < last_node + 1; iz++)
+      {
+        auto iz_ind = iz - first_node;
+        for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+        {
+          auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
+          _h_soln->set(node_out, xx[iz_ind * _n_channels + i_ch]);
+        }
+      }
+      KSPDestroy(&ksploc);
+      VecDestroy(&sol);
     }
   }
 }
@@ -1116,10 +1689,10 @@ LiquidMetalSubChannel1PhaseProblem::externalSolve()
   if (_segregated_bool)
     P_it_max = 2 * _n_blocks;
   else
-    P_it_max = 100;
+    P_it_max = 300;
 
   if ((_n_blocks == 1) && (_segregated_bool))
-    P_it_max = 1;
+    P_it_max = 5;
   if (!_segregated_bool)
   {
     initializeSolution();
@@ -1309,12 +1882,25 @@ LiquidMetalSubChannel1PhaseProblem::externalSolve()
 
   auto power_in = 0.0;
   auto power_out = 0.0;
+  auto Total_surface_area = 0.0;
+  auto mass_flow_in = 0.0;
+  auto mass_flow_out = 0.0;
   for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
   {
     auto * node_in = _subchannel_mesh.getChannelNode(i_ch, 0);
     auto * node_out = _subchannel_mesh.getChannelNode(i_ch, _n_cells);
+    Total_surface_area += (*_S_flow_soln)(node_in);
     power_in += (*_mdot_soln)(node_in) * (*_h_soln)(node_in);
     power_out += (*_mdot_soln)(node_out) * (*_h_soln)(node_out);
+    mass_flow_in += (*_mdot_soln)(node_in);
+    mass_flow_out += (*_mdot_soln)(node_out);
   }
+
+  auto h_bulk_out = power_out / mass_flow_out;
+  auto T_bulk_out = _fp->T_from_p_h(_P_out, h_bulk_out);
+
+  _console << "Bulk sodium temperature at the bundle outlet :" << T_bulk_out << std::endl;
   _console << "Power added to coolant is: " << power_out - power_in << " Watt" << std::endl;
+  _console << "Mass balance is: " << mass_flow_out - mass_flow_in << " Kg/sec" << std::endl;
+  _console << " ============================ " << std::endl;
 }
