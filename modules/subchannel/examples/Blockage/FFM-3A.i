@@ -16,7 +16,7 @@ P_out = 2.0e5 # Pa
   [subchannel]
     type = TriSubChannelMeshGenerator
     nrings = 3
-    n_cells = 37
+    n_cells = 36
     flat_to_flat = 3.41e-2
     heated_length = 0.5334
     unheated_length_entry = 0.3048
@@ -30,7 +30,19 @@ P_out = 2.0e5 # Pa
     z_blockage = '0.6858 0.69215'
     index_blockage = '0 1 2 3 4 5'
     reduction_blockage = '0.1 0.1 0.1 0.1 0.1 0.1'
-    k_blockage = '1 1 1 1 1 1 '
+    k_blockage = '0.0 0.0 0.0 0.0 0.0 0.0'
+    # z_blockage = '0.6 0.80'
+    # index_blockage = '0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41'
+    # reduction_blockage = '.1 .1 .1 .1 .1 .1 .1 .1 .1 .1
+    #                       .1 .1 .1 .1 .1 .1 .1 .1 .1 .1
+    #                       .1 .1 .1 .1 .1 .1 .1 .1 .1 .1
+    #                       .1 .1 .1 .1 .1 .1 .1 .1 .1 .1
+    #                                               .1 .1'
+    # k_blockage = '.0 .0 .0 .0 .0 .0 .0 .0 .0 .0
+    #               .0 .0 .0 .0 .0 .0 .0 .0 .0 .0
+    #               .0 .0 .0 .0 .0 .0 .0 .0 .0 .0
+    #               .0 .0 .0 .0 .0 .0 .0 .0 .0 .0
+    #                                       .0 .0'
   []
 []
 
@@ -79,10 +91,11 @@ P_out = 2.0e5 # Pa
   compute_density = true
   compute_viscosity = true
   compute_power = true
-  P_tol = 1.0e-3
-  T_tol = 1.0e-3
+  P_tol = 1.0e-5
+  T_tol = 1.0e-5
   implicit = true
   segregated = false
+  interpolation_scheme = 'upwind'
 []
 
 [ICs]
@@ -99,7 +112,7 @@ P_out = 2.0e5 # Pa
    [q_prime_IC]
     type = TriPowerIC
     variable = q_prime
-    power = 332500.0 #W
+    power = 334442.0 #W
     filename = "pin_power_profile_19.txt"
   []
 

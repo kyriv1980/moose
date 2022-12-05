@@ -72,7 +72,7 @@ QuadSubChannelMeshGenerator::validParams()
   params.addRequiredParam<unsigned int>("n_cells", "The number of cells in the axial direction");
   params.addRequiredParam<unsigned int>("nx", "Number of channels in the x direction [-]");
   params.addRequiredParam<unsigned int>("ny", "Number of channels in the y direction [-]");
-  params.addRequiredParam<Real>("gap", "Half gap between assemblies [m]");
+  params.addRequiredParam<Real>("gap", "(Edge Pitch W = pitch/2 + rod_diameter/2 + gap) [m]");
   params.addParam<unsigned int>("block_id", 0, "Domain Index");
   return params;
 }
@@ -135,6 +135,9 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
                ": The number of subchannels cannot be less than 2 in both directions (x and y). "
                "Smallest assembly allowed is either 2X1 or 1X2. ");
 
+  SubChannelMesh::generateZGrid(
+      _unheated_length_entry, _heated_length, _unheated_length_exit, _n_cells, _z_grid);
+
   // Defining the total length from 3 axial sections
   Real L = _unheated_length_entry + _heated_length + _unheated_length_exit;
 
@@ -156,22 +159,16 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
   for (unsigned int i = 0; i < _n_channels; i++)
     _k_grid[i] = kgrid;
 
-  // Figure out how many axial layers are blocked
-  int axial_levels_blocked = std::round((_z_blockage.back() - _z_blockage.front()) * _n_cells / L);
-
   // Add blockage resistance to the 2D grid resistane array
   Real dz = L / _n_cells;
   for (unsigned int i = 0; i < _n_cells + 1; i++)
   {
-    // Defining the dz based in the total length and the specified number of axial cells
-    _z_grid.push_back(dz * i);
-    if ((dz * i >= _z_blockage.front() && dz * i <= _z_blockage.back()) &&
-        axial_levels_blocked != 0)
+    if ((dz * i >= _z_blockage.front() && dz * i <= _z_blockage.back()))
     {
       unsigned int index(0);
       for (const auto & i_ch : _index_blockage)
       {
-        _k_grid[i_ch][i] += (_k_blockage[index] / axial_levels_blocked);
+        _k_grid[i_ch][i] += _k_blockage[index];
         index++;
       }
     }
