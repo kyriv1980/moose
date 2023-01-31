@@ -175,6 +175,13 @@ P_out = 2.0e5 # Pa
   []
 []
 
+[Postprocessors]
+  [total_pressure_drop]
+    type = SubChannelPressureDrop
+    execute_on = "timestep_end"
+  []
+[]
+
 [Outputs]
   exodus = true
 []

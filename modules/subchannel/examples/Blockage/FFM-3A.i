@@ -112,7 +112,7 @@ P_out = 2.0e5 # Pa
    [q_prime_IC]
     type = TriPowerIC
     variable = q_prime
-    power = 334442.0 #W
+    power = 332500.0 #W
     filename = "pin_power_profile_19.txt"
   []
 
@@ -140,7 +140,6 @@ P_out = 2.0e5 # Pa
     T = T
     fp = sodium
   []
-
 
   [rho_ic]
     type = RhoFromPressureTemperatureIC
@@ -198,6 +197,65 @@ P_out = 2.0e5 # Pa
   type = Steady
   nl_rel_tol = 0.9
   l_tol = 0.9
+[]
+
+[Postprocessors]
+  [T37]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 37
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T36]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 36
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T20]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 20
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T10]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 10
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T4]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 4
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T1]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 1
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T14]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 14
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
+  [T28]
+    type = TriSubChannelPointValue
+    variable = T
+    index = 28
+    execute_on ='TIMESTEP_END'
+    height = 0.9144
+  []
 []
 
 ################################################################################

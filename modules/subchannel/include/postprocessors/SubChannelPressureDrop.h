@@ -14,21 +14,25 @@
 
 #pragma once
 
-#include "DiffusionFluxAux.h"
+#include "GeneralPostprocessor.h"
+#include "SubChannelMesh.h"
 
 /**
- * Computes linear heat rate
+ * Calculates an overall average pressure drop for the hexagonal subchannel assembly
  */
-class QPrimeAux : public DiffusionFluxAux
+class SubChannelPressureDrop : public GeneralPostprocessor
 {
 public:
-  static InputParameters validParams();
-
-  QPrimeAux(const InputParameters & parameters);
-
-  virtual Real computeValue() override;
+  SubChannelPressureDrop(const InputParameters & params);
+  virtual void initialize() override {}
+  virtual void execute() override;
+  virtual void finalize() override {}
+  virtual Real getValue() override;
 
 protected:
-  /// rod diameter
-  const Real & _rod_diameter;
+  SubChannelMesh & _mesh;
+  Real _value;
+
+public:
+  static InputParameters validParams();
 };

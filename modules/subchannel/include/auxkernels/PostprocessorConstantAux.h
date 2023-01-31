@@ -12,26 +12,23 @@
 /*               See COPYRIGHT for full restrictions                */
 /********************************************************************/
 
-#include "QPrimeAux.h"
+#pragma once
 
-registerMooseObject("MooseApp", QPrimeAux);
+#include "AuxKernel.h"
 
-InputParameters
-QPrimeAux::validParams()
+/**
+ * Constant auxiliary value
+ */
+class PostprocessorConstantAux : public AuxKernel
 {
-  InputParameters params = DiffusionFluxAux::validParams();
-  params.addClassDescription("Axial heat rate on pin surface");
-  params.addRequiredParam<Real>("rod_diameter", "[m]");
-  return params;
-}
+public:
+  static InputParameters validParams();
 
-QPrimeAux::QPrimeAux(const InputParameters & parameters)
-  : DiffusionFluxAux(parameters), _rod_diameter(getParam<Real>("rod_diameter"))
-{
-}
+  PostprocessorConstantAux(const InputParameters & parameters);
 
-Real
-QPrimeAux::computeValue()
-{
-  return DiffusionFluxAux::computeValue() * M_PI * _rod_diameter;
-}
+protected:
+  virtual Real computeValue() override;
+
+  /// Value provided by postprocessor
+  const PostprocessorValue & _pvalue;
+};

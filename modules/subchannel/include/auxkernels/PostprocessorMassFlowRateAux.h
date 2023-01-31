@@ -12,29 +12,26 @@
 /*               See COPYRIGHT for full restrictions                */
 /********************************************************************/
 
-#include "MassFlowRateAux.h"
+#pragma once
 
-registerMooseObject("SubChannelApp", MassFlowRateAux);
+#include "AuxKernel.h"
 
-InputParameters
-MassFlowRateAux::validParams()
+/**
+ * Computes mass float rate from specified uniform mass flux and cross-sectional area.
+ * Reads mass flux value from postprocessor.
+ */
+class PostprocessorMassFlowRateAux : public AuxKernel
 {
-  InputParameters params = AuxKernel::validParams();
-  params.addClassDescription(
-      "Computes mass flow rate from specified mass flux and cross-sectional area");
-  params.addRequiredCoupledVar("area", "Cross sectional area [m^2]");
-  params.addRequiredParam<Real>("mass_flux", "User specified mass flux [kg/s-m^2]");
-  params.declareControllable("mass_flux");
-  return params;
-}
+public:
+  static InputParameters validParams();
 
-MassFlowRateAux::MassFlowRateAux(const InputParameters & parameters)
-  : AuxKernel(parameters), _mass_flux(getParam<Real>("mass_flux")), _area(coupledValue("area"))
-{
-}
+  PostprocessorMassFlowRateAux(const InputParameters & parameters);
 
-Real
-MassFlowRateAux::computeValue()
-{
-  return _mass_flux * _area[_qp];
-}
+  virtual Real computeValue() override;
+
+protected:
+  /// Mass flux provided by postprocessor
+  const PostprocessorValue & _pvalue;
+  /// Cross-sectional area
+  const VariableValue & _area;
+};
