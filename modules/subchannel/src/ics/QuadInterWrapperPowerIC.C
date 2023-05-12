@@ -25,6 +25,8 @@ InputParameters
 QuadInterWrapperPowerIC::validParams()
 {
   InputParameters params = QuadInterWrapperBaseIC::validParams();
+  params.addClassDescription("Computes axial power rate [W/m] that goes into the inter-wrapper "
+                             "cells in a square lattice subchannel arrangement");
   params.addParam<Real>("power", 0.0, "[W]");
   params.addParam<std::string>("filename",
                                "file_was_not_found",
@@ -53,7 +55,7 @@ QuadInterWrapperPowerIC::QuadInterWrapperPowerIC(const InputParameters & params)
   _power_dis.setZero();
   _assembly_power_correction.resize((ny - 1) * (nx - 1), 1);
   _assembly_power_correction.setOnes();
-  double vin;
+  Real vin;
   ifstream inFile;
 
   _console << "Power file: " << _filename << std::endl;

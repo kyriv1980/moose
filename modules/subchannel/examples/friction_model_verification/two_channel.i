@@ -20,15 +20,13 @@ P_out = 155e+5 # Pa
 [Functions]
   [S_fn]
     type = ParsedFunction
-    value = if(y>0.0,0.002,0.001)
+    expression = if(y>0.0,0.002,0.001)
   []
 []
 
-[Modules]
-  [FluidProperties]
-    [water]
-      type = Water97FluidProperties
-    []
+[FluidProperties]
+  [water]
+    type = Water97FluidProperties
   []
 []
 
