@@ -1,18 +1,17 @@
 T_in = 359.15
 
-[TriSubChannelMesh]
-  [subchannel]
-    type = TriSubChannelMeshGenerator
-    nrings = 3
+[QuadSubChannelMesh]
+  [sub_channel]
+    type = QuadSubChannelMeshGenerator
+    nx = 3
+    ny = 3
     n_cells = 10
-    flat_to_flat = 3.41e-2
-    heated_length = 1.0
-    rod_diameter = 5.84e-3
-    pitch = 7.26e-3
-    dwire = 1.42e-3
-    hwire = 0.3048
-    spacer_z = '0.0'
+    pitch = 0.25
+    rod_diameter = 0.125
+    gap = 0.1
+    heated_length = 1
     spacer_k = '0.0'
+    spacer_z = '0'
   []
 []
 
@@ -37,9 +36,9 @@ T_in = 359.15
   [T]
     type = SubChannelPointValue
     variable = T
-    index = 0
+    index = 4
     execute_on = 'initial timestep_end'
-    height = 0.5
+    height = 5
   []
 []
 
@@ -49,6 +48,8 @@ T_in = 359.15
 
 [Executioner]
   type = Transient
+  nl_rel_tol = 0.9
+  l_tol = 0.9
   start_time = 0.0
   end_time = 10.0
   dt = 1.0
