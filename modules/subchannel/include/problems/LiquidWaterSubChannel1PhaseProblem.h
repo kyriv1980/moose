@@ -18,9 +18,8 @@
 #include "QuadSubChannelMesh.h"
 
 class LiquidWaterSubChannel1PhaseProblem;
-
 /**
- * Steady state subchannel solver for 1-phase liquid water coolant
+ * Steady state subchannel solver for 1-phase quad liquid water coolant
  */
 class LiquidWaterSubChannel1PhaseProblem : public SubChannel1PhaseProblem
 {
@@ -29,7 +28,17 @@ public:
 
 protected:
   virtual Real computeFrictionFactor(_friction_args_struct friction_args) override;
+  virtual Real computeAddedHeatPin(unsigned int i_ch, unsigned int iz) override;
+  virtual void computeWijPrime(int iblock) override;
+  virtual void computeh(int iblock) override;
   QuadSubChannelMesh & _subchannel_mesh;
+
+  /// Thermal diffusion coefficient used in turbulent crossflow
+  const Real & _beta;
+  /// Flag that activates one of the two friction models (default: f=a*Re^b, non-default: Todreas-Kazimi)
+  const bool _default_friction_model;
+  /// Flag that activates the use of constant beta
+  const bool _constant_beta;
 
 public:
   static InputParameters validParams();

@@ -67,11 +67,9 @@ P_out = 4.923e6 # Pa
   []
 []
 
-[Modules]
-  [FluidProperties]
-    [water]
-      type = Water97FluidProperties
-    []
+[FluidProperties]
+  [water]
+    type = Water97FluidProperties
   []
 []
 
@@ -93,6 +91,7 @@ P_out = 4.923e6 # Pa
   verbose_subchannel = true
   P_tol = 1e-04
   T_tol = 1e-04
+  constant_beta = false
 []
 
 [ICs]
@@ -193,6 +192,4 @@ P_out = 4.923e6 # Pa
 
 [Executioner]
   type = Steady
-  nl_rel_tol = 0.9
-  l_tol = 0.9
 []

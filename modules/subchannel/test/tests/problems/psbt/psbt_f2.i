@@ -67,11 +67,9 @@ P_out = 4.923e6 # Pa
   []
 []
 
-[Modules]
-  [FluidProperties]
-    [water]
-      type = Water97FluidProperties
-    []
+[FluidProperties]
+  [water]
+    type = Water97FluidProperties
   []
 []
 
@@ -86,6 +84,7 @@ P_out = 4.923e6 # Pa
   compute_power = true
   P_out = ${P_out}
   default_friction_model = false
+  constant_beta = false
 []
 
 [ICs]
@@ -186,6 +185,4 @@ P_out = 4.923e6 # Pa
 
 [Executioner]
   type = Steady
-  nl_rel_tol = 0.9
-  l_tol = 0.9
 []

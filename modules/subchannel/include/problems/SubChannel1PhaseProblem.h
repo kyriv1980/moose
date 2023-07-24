@@ -64,13 +64,13 @@ protected:
   /// Computes mass flow per channel for block iblock
   virtual void computeMdot(int iblock);
   /// Computes turbulent crossflow per gap for block iblock
-  virtual void computeWijPrime(int iblock);
+  virtual void computeWijPrime(int iblock) = 0;
   /// Computes Pressure Drop per channel for block iblock
   virtual void computeDP(int iblock);
   /// Computes Pressure per channel for block iblock
   virtual void computeP(int iblock);
   /// Computes Enthalpy per channel for block iblock
-  virtual void computeh(int iblock);
+  virtual void computeh(int iblock) = 0;
   /// Computes Temperature per channel for block iblock
   virtual void computeT(int iblock);
   /// Computes Density per channel for block iblock
@@ -80,7 +80,7 @@ protected:
   /// Computes cross fluxes for block iblock
   virtual void computeWij(int iblock);
   /// Computes added heat for channel i_ch and cell iz
-  virtual Real computeAddedHeatPin(unsigned int i_ch, unsigned int iz);
+  virtual Real computeAddedHeatPin(unsigned int i_ch, unsigned int iz) = 0;
   /// Function that computes the heat flux added by the duct
   virtual Real computeAddedHeatDuct(unsigned int i_ch, unsigned int iz);
   /// compute massflow that matches the given dp/dz.
@@ -155,8 +155,6 @@ protected:
   const Real & _dt;
   /// Outlet Pressure
   const Real & _P_out;
-  /// Thermal diffusion coefficient used in turbulent crossflow
-  const Real & _beta;
   /// Turbulent modeling parameter used in axial momentum equation
   const Real & _CT;
   /// Convergence tolerance for the pressure loop in external solve
@@ -185,9 +183,6 @@ protected:
   const bool _monolithic_thermal_bool;
   /// Boolean to printout information related to subchannel solve
   const bool _verbose_subchannel;
-  /// Flag that activates one of the two friction models (default: f=a*Re^b, non-default: Todreas-Kazimi)
-  /// doesn't apply to liquid metal
-  const bool _default_friction_model;
 
   /// Solutions handles and link to TH tables properties
   const SinglePhaseFluidProperties * _fp;
@@ -327,3 +322,28 @@ protected:
 public:
   static InputParameters validParams();
 };
+
+template <class T>
+PetscErrorCode
+SubChannel1PhaseProblem::populateDenseFromVector(const Vec & x,
+                                                 T & loc_solution,
+                                                 const unsigned int first_axial_level,
+                                                 const unsigned int last_axial_level,
+                                                 const unsigned int cross_dimension)
+{
+  PetscErrorCode ierr;
+  PetscScalar * xx;
+  ierr = VecGetArray(x, &xx);
+  CHKERRQ(ierr);
+  for (unsigned int iz = first_axial_level; iz < last_axial_level + 1; iz++)
+  {
+    unsigned int iz_ind = iz - first_axial_level;
+    for (unsigned int i_l = 0; i_l < cross_dimension; i_l++)
+    {
+      loc_solution(i_l, iz) = xx[iz_ind * cross_dimension + i_l];
+    }
+  }
+  ierr = VecRestoreArray(x, &xx);
+  CHKERRQ(ierr);
+  return 0;
+}

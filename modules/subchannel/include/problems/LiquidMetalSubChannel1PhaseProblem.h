@@ -19,7 +19,7 @@
 class LiquidMetalSubChannel1PhaseProblem;
 class TriSubChannelMesh;
 /**
- * Steady state subchannel solver for 1-phase liquid metal coolants
+ * Steady state subchannel solver for 1-phase hex liquid metal coolants
  */
 class LiquidMetalSubChannel1PhaseProblem : public SubChannel1PhaseProblem
 {
@@ -35,12 +35,11 @@ protected:
    * Upgraded Cheng-Todreas Correlation (2018).
    */
   virtual Real computeFrictionFactor(_friction_args_struct friction_args) override;
-  /// Computes added heat for channel i_ch and cell iz
   virtual Real computeAddedHeatPin(unsigned int i_ch, unsigned int iz) override;
   virtual void computeWijPrime(int iblock) override;
   virtual void computeh(int iblock) override;
   TriSubChannelMesh & _tri_sch_mesh;
-  // Extra objects for heat conduction, which is important in sodium
+  // Extra objects for heat conduction, which is important with metal coolants
   Mat _hc_axial_heat_conduction_mat;
   Vec _hc_axial_heat_conduction_rhs;
   Mat _hc_radial_heat_conduction_mat;

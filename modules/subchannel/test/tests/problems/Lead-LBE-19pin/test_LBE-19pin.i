@@ -50,16 +50,15 @@ P_out = 1.0e5 # Pa
 []
 
 [FluidProperties]
-    [LBE]
-        type = LeadBismuthFluidProperties
-    []
+  [LBE]
+      type = LeadBismuthFluidProperties
+  []
 []
 
 [Problem]
   type = LiquidMetalSubChannel1PhaseProblem
   fp = LBE
   n_blocks = 1
-  beta = 0.006
   P_out = 1.0e5
   CT = 1.0
   # enforce_uniform_pressure = false
@@ -173,8 +172,6 @@ P_out = 1.0e5 # Pa
 
 [Executioner]
   type = Steady
-  nl_rel_tol = 0.9
-  l_tol = 0.9
 []
 
 # ################################################################################

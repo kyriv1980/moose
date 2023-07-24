@@ -56,11 +56,9 @@ P_out = 2.0e5 # Pa
   []
 []
 
-[Modules]
-  [FluidProperties]
-    [sodium]
-       type = PBSodiumFluidProperties
-    []
+[FluidProperties]
+  [sodium]
+      type = PBSodiumFluidProperties
   []
 []
 
@@ -68,7 +66,6 @@ P_out = 2.0e5 # Pa
   type = LiquidMetalSubChannel1PhaseProblem
   fp = sodium
   n_blocks = 1
-  beta = 0.006
   P_out = 2.0e5
   CT = 2.6
   compute_density = true
@@ -188,6 +185,4 @@ P_out = 2.0e5 # Pa
 
 [Executioner]
   type = Steady
-  nl_rel_tol = 0.9
-  l_tol = 0.9
 []
