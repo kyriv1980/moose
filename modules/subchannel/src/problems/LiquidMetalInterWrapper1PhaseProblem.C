@@ -485,12 +485,11 @@ LiquidMetalInterWrapper1PhaseProblem::computeh(int iblock)
 
       if (h_out < 0)
       {
-        _console << "Wij = : " << _Wij << "\n";
-        mooseError(name(),
-                   " : Calculation of negative Enthalpy h_out = : ",
-                   h_out,
-                   " Axial Level= : ",
-                   iz);
+        mooseWarning(name(),
+                     " : Calculation of negative Enthalpy h_out = : ",
+                     h_out,
+                     " Axial Level= : ",
+                     iz);
       }
       _h_soln->set(node_out, h_out); // J/kg
     }
@@ -500,6 +499,7 @@ LiquidMetalInterWrapper1PhaseProblem::computeh(int iblock)
 void
 LiquidMetalInterWrapper1PhaseProblem::externalSolve()
 {
+  initializeSolution();
   _console << "Executing subchannel solver\n";
   auto P_error = 1.0;
   unsigned int P_it = 0;
@@ -577,5 +577,31 @@ LiquidMetalInterWrapper1PhaseProblem::externalSolve()
     power_in += (*_mdot_soln)(node_in) * (*_h_soln)(node_in);
     power_out += (*_mdot_soln)(node_out) * (*_h_soln)(node_out);
   }
+
+  /// TODO: add a verbose print flag
+  auto Total_surface_area = 0.0;
+  auto mass_flow_in = 0.0;
+  auto mass_flow_out = 0.0;
+  for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+  {
+    auto * node_in = _subchannel_mesh.getChannelNode(i_ch, 0);
+    auto * node_out = _subchannel_mesh.getChannelNode(i_ch, _n_cells);
+    Total_surface_area += (*_S_flow_soln)(node_in);
+    mass_flow_in += (*_mdot_soln)(node_in);
+    mass_flow_out += (*_mdot_soln)(node_out);
+  }
+  auto h_bulk_out = power_out / mass_flow_out;
+  auto T_bulk_out = _fp->T_from_p_h(_P_out, h_bulk_out);
+
+  _console << " ======================================= " << std::endl;
+  _console << " ======== Subchannel Print Outs ======== " << std::endl;
+  _console << " ======================================= " << std::endl;
+  _console << "Total Surface Area :" << Total_surface_area << " m^2" << std::endl;
+  _console << "Bulk coolant temperature at outlet :" << T_bulk_out << " K" << std::endl;
+  _console << "Power added to coolant is: " << power_out - power_in << " Watt" << std::endl;
+  _console << "Mass in: " << mass_flow_in << " kg/sec" << std::endl;
+  _console << "Mass out: " << mass_flow_out << " kg/sec" << std::endl;
+  _console << " ======================================= " << std::endl;
+
   _console << "Power added to coolant is: " << power_out - power_in << " Watt" << std::endl;
 }
