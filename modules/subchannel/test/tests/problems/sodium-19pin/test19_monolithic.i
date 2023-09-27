@@ -72,6 +72,9 @@ P_out = 2.0e5 # Pa
   [Tpin]
     block = fuel_pins
   []
+  [Dpin]
+    block = fuel_pins
+  []
 []
 
 [FluidProperties]
@@ -119,6 +122,12 @@ P_out = 2.0e5 # Pa
     type = ConstantIC
     variable = T
     value = ${T_in}
+  []
+
+  [Dpin_ic]
+    type = ConstantIC
+    variable = Dpin
+    value = 5.84e-3
   []
 
   [P_ic]

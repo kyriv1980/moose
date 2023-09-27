@@ -47,6 +47,106 @@ LiquidWaterSubChannel1PhaseProblem::LiquidWaterSubChannel1PhaseProblem(
 {
 }
 
+void
+LiquidWaterSubChannel1PhaseProblem::initializeSolution()
+{
+  auto pin_mesh_exist = _subchannel_mesh.pinMeshExist();
+  if (pin_mesh_exist)
+  {
+    Real standard_area, additional_area, wetted_perimeter;
+    auto pitch = _subchannel_mesh.getPitch();
+    auto gap = _subchannel_mesh.getGap();
+    auto z_blockage = _subchannel_mesh.getZBlockage();
+    auto index_blockage = _subchannel_mesh.getIndexBlockage();
+    auto reduction_blockage = _subchannel_mesh.getReductionBlockage();
+    for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
+    {
+      for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+      {
+        auto * node = _subchannel_mesh.getChannelNode(i_ch, iz);
+        auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+        auto Z = _z_grid[iz];
+        Real rod_area = 0.0;
+        Real rod_perimeter = 0.0;
+        for (auto i_pin : _subchannel_mesh.getChannelPins(i_ch))
+        {
+          auto * pin_node = _subchannel_mesh.getPinNode(i_pin, iz);
+          rod_area += 0.25 * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
+          rod_perimeter += 0.25 * M_PI * (*_Dpin_soln)(pin_node);
+        }
+
+        if (subch_type == EChannelType::CORNER)
+        {
+          standard_area = 0.25 * pitch * pitch;
+          additional_area = pitch * gap + gap * gap;
+          wetted_perimeter = rod_perimeter + pitch + 2 * gap;
+        }
+        else if (subch_type == EChannelType::EDGE)
+        {
+          standard_area = 0.5 * pitch * pitch;
+          additional_area = pitch * gap;
+          wetted_perimeter = rod_perimeter + pitch;
+        }
+        else
+        {
+          standard_area = pitch * pitch;
+          additional_area = 0.0;
+          wetted_perimeter = rod_perimeter;
+        }
+
+        /// Calculate subchannel area
+        auto subchannel_area = standard_area + additional_area - rod_area;
+
+        /// Apply area reduction on subchannels affected by blockage
+        auto index = 0;
+        for (const auto & i_blockage : index_blockage)
+        {
+          if (i_ch == i_blockage && (Z >= z_blockage.front() && Z <= z_blockage.back()))
+          {
+            subchannel_area *= reduction_blockage[index];
+          }
+          index++;
+        }
+
+        _S_flow_soln->set(node, subchannel_area);
+        _w_perim_soln->set(node, wetted_perimeter);
+      }
+    }
+
+    for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
+    {
+      for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
+      {
+        auto gap_pins = _subchannel_mesh.getGapPins(i_gap);
+        auto pin_1 = gap_pins.first;
+        auto pin_2 = gap_pins.second;
+        auto * pin_node_1 = _subchannel_mesh.getPinNode(pin_1, iz);
+        auto * pin_node_2 = _subchannel_mesh.getPinNode(pin_2, iz);
+
+        if (pin_1 == pin_2) // Corner or edge gap
+        {
+          _subchannel_mesh._gij_map[iz][i_gap] = (pitch - (*_Dpin_soln)(pin_node_1)) / 2.0 + gap;
+        }
+        else // center gap
+        {
+          _subchannel_mesh._gij_map[iz][i_gap] =
+              pitch - (*_Dpin_soln)(pin_node_1) / 2.0 - (*_Dpin_soln)(pin_node_2) / 2.0;
+        }
+      }
+    }
+  }
+
+  for (unsigned int iz = 1; iz < _n_cells + 1; iz++)
+  {
+    for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+    {
+      auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
+      auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+      _mdot_soln->set(node_out, (*_mdot_soln)(node_in));
+    }
+  }
+}
+
 Real
 LiquidWaterSubChannel1PhaseProblem::computeFrictionFactor(_friction_args_struct friction_args)
 {
@@ -209,7 +309,7 @@ LiquidWaterSubChannel1PhaseProblem::computeWijPrime(int iblock)
       auto dz = _z_grid[iz] - _z_grid[iz - 1];
       for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
       {
-        auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+        auto chans = _subchannel_mesh.getGapChannels(i_gap);
         unsigned int i_ch = chans.first;
         unsigned int j_ch = chans.second;
         auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
@@ -221,7 +321,7 @@ LiquidWaterSubChannel1PhaseProblem::computeWijPrime(int iblock)
         auto Si_out = (*_S_flow_soln)(node_out_i);
         auto Sj_out = (*_S_flow_soln)(node_out_j);
         // crossflow area between channels i,j (dz*gap_width)
-        auto gap = _subchannel_mesh.getGapWidth(i_gap);
+        auto gap = _subchannel_mesh.getGapWidth(iz, i_gap);
         auto Sij = dz * gap;
         auto avg_massflux =
             0.5 * (((*_mdot_soln)(node_in_i) + (*_mdot_soln)(node_in_j)) / (Si_in + Sj_in) +
@@ -288,7 +388,7 @@ LiquidWaterSubChannel1PhaseProblem::computeWijPrime(int iblock)
       auto iz_ind = iz - first_node;
       for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
       {
-        auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+        auto chans = _subchannel_mesh.getGapChannels(i_gap);
         unsigned int i_ch = chans.first;
         unsigned int j_ch = chans.second;
         auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
@@ -300,7 +400,7 @@ LiquidWaterSubChannel1PhaseProblem::computeWijPrime(int iblock)
         auto Si_out = (*_S_flow_soln)(node_out_i);
         auto Sj_out = (*_S_flow_soln)(node_out_j);
         // crossflow area between channels i,j (dz*gap_width)
-        auto gap = _subchannel_mesh.getGapWidth(i_gap);
+        auto gap = _subchannel_mesh.getGapWidth(iz, i_gap);
         auto Sij = dz * gap;
         auto avg_massflux =
             0.5 * (((*_mdot_soln)(node_in_i) + (*_mdot_soln)(node_in_j)) / (Si_in + Sj_in) +
@@ -477,7 +577,7 @@ LiquidWaterSubChannel1PhaseProblem::computeh(int iblock)
         unsigned int counter = 0;
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int ii_ch = chans.first;
           // i is always the smallest and first index in the mapping
           unsigned int jj_ch = chans.second;
@@ -600,7 +700,7 @@ LiquidWaterSubChannel1PhaseProblem::computeh(int iblock)
         unsigned int cross_index = iz; // iz-1;
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int ii_ch = chans.first;
           unsigned int jj_ch = chans.second;
           auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);

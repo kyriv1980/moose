@@ -78,13 +78,14 @@ protected:
   /// gap nodes
   std::vector<std::vector<Node *>> _gapnodes;
   std::vector<std::pair<unsigned int, unsigned int>> _gap_to_chan_map;
+  std::vector<std::pair<unsigned int, unsigned int>> _gap_to_pin_map;
   std::vector<std::vector<unsigned int>> _chan_to_gap_map;
   std::vector<std::vector<unsigned int>> _chan_to_pin_map;
   std::vector<std::vector<unsigned int>> _pin_to_chan_map;
   /// Matrix used to give local sign to crossflow quantities
   std::vector<std::vector<double>> _sign_id_crossflow_map;
   /// Vector to store gap size
-  std::vector<double> _gij_map;
+  std::vector<std::vector<Real>> _gij_map;
   /// x,y coordinates of the subchannel centroid
   std::vector<std::vector<Real>> _subchannel_position;
   /// Subchannel type

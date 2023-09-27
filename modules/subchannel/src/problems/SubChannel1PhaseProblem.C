@@ -239,7 +239,10 @@ SubChannel1PhaseProblem::initialSetup()
   _h_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::ENTHALPY));
   _T_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::TEMPERATURE));
   if (_pin_mesh_exist)
+  {
     _Tpin_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::PIN_TEMPERATURE));
+    _Dpin_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::PIN_DIAMETER));
+  }
   _rho_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::DENSITY));
   _mu_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::VISCOSITY));
   _S_flow_soln = std::make_unique<SolutionHandle>(getVariable(0, SubChannelApp::SURFACE_AREA));
@@ -715,7 +718,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
         unsigned int counter = 0;
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int ii_ch = chans.first;
           unsigned int jj_ch = chans.second;
           auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
@@ -896,7 +899,7 @@ SubChannel1PhaseProblem::computeDP(int iblock)
         unsigned int cross_index = iz; // iz-1;
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int ii_ch = chans.first;
           unsigned int jj_ch = chans.second;
           auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
@@ -1486,7 +1489,7 @@ SubChannel1PhaseProblem::computeWij(int iblock)
       auto dz = _z_grid[iz] - _z_grid[iz - 1];
       for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
       {
-        auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+        auto chans = _subchannel_mesh.getGapChannels(i_gap);
         unsigned int i_ch = chans.first;
         unsigned int j_ch = chans.second;
         auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
@@ -1497,7 +1500,7 @@ SubChannel1PhaseProblem::computeWij(int iblock)
         auto rho_j = (*_rho_soln)(node_in_j);
         auto Si = (*_S_flow_soln)(node_in_i);
         auto Sj = (*_S_flow_soln)(node_in_j);
-        auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
+        auto Sij = dz * _subchannel_mesh.getGapWidth(iz, i_gap);
         auto Lij = pitch;
         // total local form loss in the ij direction
         auto friction_term = _kij * _Wij(i_gap, iz) * std::abs(_Wij(i_gap, iz));
@@ -1548,7 +1551,7 @@ SubChannel1PhaseProblem::computeWij(int iblock)
       auto iz_ind = iz - first_node - 1;
       for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
       {
-        auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+        auto chans = _subchannel_mesh.getGapChannels(i_gap);
         unsigned int i_ch = chans.first;
         unsigned int j_ch = chans.second;
         auto * node_in_i = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
@@ -1571,7 +1574,7 @@ SubChannel1PhaseProblem::computeWij(int iblock)
         auto S_j_out = (*_S_flow_soln)(node_out_j);
 
         // Cross-sectional gap area
-        auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
+        auto Sij = dz * _subchannel_mesh.getGapWidth(iz, i_gap);
         auto Lij = pitch;
 
         // Figure out donor cell density
@@ -2196,7 +2199,7 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
         unsigned int counter = 0;
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int i_ch_loc = chans.first;
           PetscInt row_vec = i_ch_loc + _n_channels * iz_ind;
           PetscScalar loc_Wij_value;
@@ -2594,22 +2597,6 @@ SubChannel1PhaseProblem::implicitPetscSolve(int iblock)
   return ierr;
 }
 
-void
-SubChannel1PhaseProblem::initializeSolution()
-{
-  unsigned int last_node = _n_cells;
-  unsigned int first_node = 1;
-  for (unsigned int iz = first_node; iz < last_node + 1; iz++)
-  {
-    for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
-    {
-      auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
-      auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
-      _mdot_soln->set(node_out, (*_mdot_soln)(node_in));
-    }
-  }
-}
-
 double
 SubChannel1PhaseProblem::computeMassFlowForDPDZ(Real dpdz, int i_ch)
 {
@@ -2920,8 +2907,8 @@ SubChannel1PhaseProblem::externalSolve()
           auto Pr = (*_mu_soln)(node)*cp / k;
           auto Nu = 0.023 * std::pow(Re, 0.8) * std::pow(Pr, 0.4);
           auto hw = Nu * k / Dh_i;
-          sumTemp += (*_q_prime_soln)(pin_node) / (_subchannel_mesh.getRodDiameter() * M_PI * hw) +
-                     (*_T_soln)(node);
+          sumTemp +=
+              (*_q_prime_soln)(pin_node) / ((*_Dpin_soln)(pin_node)*M_PI * hw) + (*_T_soln)(node);
           rod_counter += 1.0;
         }
         _Tpin_soln->set(pin_node, sumTemp / rod_counter);

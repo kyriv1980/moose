@@ -176,12 +176,13 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
 
   // Defining the size of the maps
   _gap_to_chan_map.resize(_n_gaps);
+  _gap_to_pin_map.resize(_n_gaps);
   _gapnodes.resize(_n_gaps);
   _chan_to_gap_map.resize(_n_channels);
   _chan_to_pin_map.resize(_n_channels);
   _pin_to_chan_map.resize(_n_pins);
   _sign_id_crossflow_map.resize(_n_channels);
-  _gij_map.resize(_n_gaps);
+  _gij_map.resize(_n_cells + 1);
   _subchannel_position.resize(_n_channels);
 
   for (unsigned int i = 0; i < _n_channels; i++)
@@ -191,6 +192,11 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
     {
       _subchannel_position.at(i).push_back(0.0);
     }
+  }
+
+  for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
+  {
+    _gij_map[iz].reserve(_n_gaps);
   }
 
   // Defining the signs for positive and negative flows
@@ -244,9 +250,9 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
 
       // make a gap size map
       if (iy == 0 || iy == _ny - 1)
-        _gij_map[i_gap] = (_pitch - _rod_diameter) / 2 + _gap;
+        _gij_map[0].push_back((_pitch - _rod_diameter) / 2 + _gap);
       else
-        _gij_map[i_gap] = (_pitch - _rod_diameter);
+        _gij_map[0].push_back(_pitch - _rod_diameter);
       ++i_gap;
     }
   }
@@ -266,11 +272,16 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
 
       // make a gap size map
       if (ix == 0 || ix == _nx - 1)
-        _gij_map[i_gap] = (_pitch - _rod_diameter) / 2 + _gap;
+        _gij_map[0].push_back((_pitch - _rod_diameter) / 2 + _gap);
       else
-        _gij_map[i_gap] = (_pitch - _rod_diameter);
+        _gij_map[0].push_back(_pitch - _rod_diameter);
       ++i_gap;
     }
+  }
+
+  for (unsigned int iz = 1; iz < _n_cells + 1; iz++)
+  {
+    _gij_map[iz] = _gij_map[0];
   }
 
   // Make pin to channel map
@@ -348,6 +359,35 @@ QuadSubChannelMeshGenerator::QuadSubChannelMeshGenerator(const InputParameters &
       Real offset_y = (_ny - 1) * _pitch / 2.0;
       _subchannel_position[i_ch][0] = _pitch * ix - offset_x;
       _subchannel_position[i_ch][1] = _pitch * iy - offset_y;
+    }
+  }
+
+  // Make gap to pin map
+  for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
+  {
+    auto i_ch = _gap_to_chan_map[i_gap].first;
+    auto j_ch = _gap_to_chan_map[i_gap].second;
+    auto i_pins = _chan_to_pin_map[i_ch];
+    auto j_pins = _chan_to_pin_map[j_ch];
+    _gap_to_pin_map[i_gap] = {10000, 10000}; // Initialize with default values
+
+    for (unsigned int i : i_pins)
+    {
+      for (unsigned int j : j_pins)
+      {
+        if (i == j)
+        {
+          if (_gap_to_pin_map[i_gap].first == 10000)
+          {
+            _gap_to_pin_map[i_gap].first = i;
+            _gap_to_pin_map[i_gap].second = i;
+          }
+          else
+          {
+            _gap_to_pin_map[i_gap].second = i;
+          }
+        }
+      }
     }
   }
 
@@ -453,6 +493,7 @@ QuadSubChannelMeshGenerator::generate()
   sch_mesh->_nodes = _nodes;
   sch_mesh->_gapnodes = _gapnodes;
   sch_mesh->_gap_to_chan_map = _gap_to_chan_map;
+  sch_mesh->_gap_to_pin_map = _gap_to_pin_map;
   sch_mesh->_chan_to_gap_map = _chan_to_gap_map;
   sch_mesh->_chan_to_pin_map = _chan_to_pin_map;
   sch_mesh->_pin_to_chan_map = _pin_to_chan_map;

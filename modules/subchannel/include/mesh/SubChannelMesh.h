@@ -118,7 +118,12 @@ public:
    * Return a pair of subchannel indices for a given gap index
    */
   virtual const std::pair<unsigned int, unsigned int> &
-  getGapNeighborChannels(unsigned int i_gap) const = 0;
+  getGapChannels(unsigned int i_gap) const = 0;
+
+  /**
+   * Return a pair of pin indices for a given gap index
+   */
+  virtual const std::pair<unsigned int, unsigned int> & getGapPins(unsigned int i_gap) const = 0;
 
   /**
    * Return a vector of gap indices for a given channel index
@@ -134,11 +139,6 @@ public:
    * Return a vector of pin indices for a given channel index
    */
   virtual const std::vector<unsigned int> & getChannelPins(unsigned int i_chan) const = 0;
-
-  /**
-   * Return a map with gap sizes
-   */
-  virtual const std::vector<double> & getGapMap() const = 0;
 
   /**
    * Return the pitch between 2 subchannels
@@ -192,7 +192,7 @@ public:
   /**
    * Return gap width for a given gap index
    */
-  virtual Real getGapWidth(unsigned int gap_index) const = 0;
+  virtual Real getGapWidth(unsigned int axial_index, unsigned int gap_index) const = 0;
 
   /**
    * Function that return the vector with the maps to the nodes if they exist

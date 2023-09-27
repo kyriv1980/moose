@@ -48,9 +48,14 @@ public:
   virtual bool pinMeshExist() const override { return _pin_mesh_exist; }
   virtual bool ductMeshExist() const override { return false; }
   virtual const std::pair<unsigned int, unsigned int> &
-  getGapNeighborChannels(unsigned int i_gap) const override
+  getGapChannels(unsigned int i_gap) const override
   {
     return _gap_to_chan_map[i_gap];
+  }
+  virtual const std::pair<unsigned int, unsigned int> &
+  getGapPins(unsigned int i_gap) const override
+  {
+    return _gap_to_pin_map[i_gap];
   }
   virtual const std::vector<unsigned int> & getChannelGaps(unsigned int i_chan) const override
   {
@@ -64,7 +69,6 @@ public:
   {
     return _chan_to_pin_map[i_chan];
   }
-  virtual const std::vector<double> & getGapMap() const override { return _gij_map; }
   virtual const Real & getPitch() const override { return _pitch; }
   virtual const Real & getCrossflowSign(unsigned int i_chan, unsigned int i_local) const override
   {
@@ -86,7 +90,10 @@ public:
     return _subch_type[index];
   }
 
-  virtual Real getGapWidth(unsigned int gap_index) const override { return _gij_map[gap_index]; }
+  virtual Real getGapWidth(unsigned int axial_index, unsigned int gap_index) const override
+  {
+    return _gij_map[axial_index][gap_index];
+  }
 
 protected:
   unsigned int _nx;
@@ -101,13 +108,14 @@ protected:
   std::vector<std::vector<Node *>> _pin_nodes;
   std::vector<std::vector<Node *>> _gapnodes;
   std::vector<std::pair<unsigned int, unsigned int>> _gap_to_chan_map;
+  std::vector<std::pair<unsigned int, unsigned int>> _gap_to_pin_map;
   std::vector<std::vector<unsigned int>> _chan_to_gap_map;
   std::vector<std::vector<unsigned int>> _chan_to_pin_map;
   std::vector<std::vector<unsigned int>> _pin_to_chan_map;
   /// Matrix used to give local sign to crossflow quantities
   std::vector<std::vector<double>> _sign_id_crossflow_map;
   /// Vector to store gap size
-  std::vector<double> _gij_map;
+  std::vector<std::vector<Real>> _gij_map;
   /// Subchannel type
   std::vector<EChannelType> _subch_type;
   /// Flag that informs the solver whether there is a Pin Mesh or not
@@ -129,4 +137,5 @@ public:
 
   friend class QuadSubChannelMeshGenerator;
   friend class QuadPinMeshGenerator;
+  friend class LiquidWaterSubChannel1PhaseProblem;
 };

@@ -54,6 +54,131 @@ LiquidMetalSubChannel1PhaseProblem::~LiquidMetalSubChannel1PhaseProblem()
   VecDestroy(&_hc_sweep_enthalpy_rhs);
 }
 
+void
+LiquidMetalSubChannel1PhaseProblem::initializeSolution()
+{
+  auto pin_mesh_exist = _subchannel_mesh.pinMeshExist();
+  if (pin_mesh_exist)
+  {
+    Real standard_area, wire_area, additional_area, wetted_perimeter;
+    auto pitch = _subchannel_mesh.getPitch();
+    auto rod_diameter = _subchannel_mesh.getRodDiameter();
+    auto wire_diameter = _tri_sch_mesh.getWireDiameter();
+    auto wire_lead_length = _tri_sch_mesh.getWireLeadLength();
+    auto gap = _tri_sch_mesh.getDuctToRodGap();
+    auto z_blockage = _subchannel_mesh.getZBlockage();
+    auto index_blockage = _subchannel_mesh.getIndexBlockage();
+    auto reduction_blockage = _subchannel_mesh.getReductionBlockage();
+    auto theta = std::acos(wire_lead_length /
+                           std::sqrt(std::pow(wire_lead_length, 2) +
+                                     std::pow(libMesh::pi * (rod_diameter + wire_diameter), 2)));
+    for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
+    {
+      for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+      {
+        auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+        auto * node = _subchannel_mesh.getChannelNode(i_ch, iz);
+        auto Z = _z_grid[iz];
+
+        Real rod_area = 0.0;
+        Real rod_perimeter = 0.0;
+        Real Index = 0.0;
+        for (auto i_pin : _subchannel_mesh.getChannelPins(i_ch))
+        {
+          auto * pin_node = _subchannel_mesh.getPinNode(i_pin, iz);
+          if (subch_type == EChannelType::CENTER || subch_type == EChannelType::CORNER)
+          {
+            rod_area +=
+                (1.0 / 6.0) * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
+            rod_perimeter += (1.0 / 6.0) * M_PI * (*_Dpin_soln)(pin_node);
+            Index += 1.0;
+          }
+          else
+          {
+            rod_area +=
+                (1.0 / 4.0) * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
+            rod_perimeter += (1.0 / 4.0) * M_PI * (*_Dpin_soln)(pin_node);
+            Index += 1.0;
+          }
+        }
+
+        if (subch_type == EChannelType::CENTER)
+        {
+          standard_area = std::pow(pitch, 2.0) * std::sqrt(3.0) / 4.0;
+          additional_area = 0.0;
+          wire_area = libMesh::pi * std::pow(wire_diameter, 2.0) / 8.0 / std::cos(theta);
+          wetted_perimeter = rod_perimeter + 0.5 * libMesh::pi * wire_diameter / std::cos(theta);
+        }
+        else if (subch_type == EChannelType::EDGE)
+        {
+          standard_area = pitch * (rod_diameter / 2.0 + gap);
+          additional_area = 0.0;
+          wire_area = libMesh::pi * std::pow(wire_diameter, 2.0) / 8.0 / std::cos(theta);
+          wetted_perimeter =
+              rod_perimeter + 0.5 * libMesh::pi * wire_diameter / std::cos(theta) + pitch;
+        }
+        else
+        {
+          standard_area = 1.0 / std::sqrt(3.0) * std::pow((rod_diameter / 2.0 + gap), 2.0);
+          additional_area = 0.0;
+          wire_area = libMesh::pi / 24.0 * std::pow(wire_diameter, 2.0) / std::cos(theta);
+          wetted_perimeter = rod_perimeter + libMesh::pi * wire_diameter / std::cos(theta) / 6.0 +
+                             2.0 / std::sqrt(3.0) * (rod_diameter / 2.0 + gap);
+        }
+
+        /// Calculate subchannel area
+        auto subchannel_area = standard_area + additional_area - rod_area - wire_area;
+
+        /// Apply area reduction on subchannels affected by blockage
+        auto index = 0;
+        for (const auto & i_blockage : index_blockage)
+        {
+          if (i_ch == i_blockage && (Z >= z_blockage.front() && Z <= z_blockage.back()))
+          {
+            subchannel_area *= reduction_blockage[index];
+          }
+          index++;
+        }
+
+        _S_flow_soln->set(node, subchannel_area);
+        _w_perim_soln->set(node, wetted_perimeter);
+      }
+    }
+
+    for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
+    {
+      for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
+      {
+        auto gap_pins = _subchannel_mesh.getGapPins(i_gap);
+        auto pin_1 = gap_pins.first;
+        auto pin_2 = gap_pins.second;
+        auto * pin_node_1 = _subchannel_mesh.getPinNode(pin_1, iz);
+        auto * pin_node_2 = _subchannel_mesh.getPinNode(pin_2, iz);
+
+        if (pin_1 == pin_2) // Corner or edge gap
+        {
+          _tri_sch_mesh._gij_map[iz][i_gap] = (pitch - (*_Dpin_soln)(pin_node_1)) / 2.0 + gap;
+        }
+        else // center gap
+        {
+          _tri_sch_mesh._gij_map[iz][i_gap] =
+              pitch - (*_Dpin_soln)(pin_node_1) / 2.0 - (*_Dpin_soln)(pin_node_2) / 2.0;
+        }
+      }
+    }
+  }
+
+  for (unsigned int iz = 1; iz < _n_cells + 1; iz++)
+  {
+    for (unsigned int i_ch = 0; i_ch < _n_channels; i_ch++)
+    {
+      auto * node_out = _subchannel_mesh.getChannelNode(i_ch, iz);
+      auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
+      _mdot_soln->set(node_out, (*_mdot_soln)(node_in));
+    }
+  }
+}
+
 Real
 LiquidMetalSubChannel1PhaseProblem::computeFrictionFactor(_friction_args_struct friction_args)
 {
@@ -250,7 +375,7 @@ LiquidMetalSubChannel1PhaseProblem::computeWijPrime(int iblock)
     auto dz = z_grid[iz] - z_grid[iz - 1];
     for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
     {
-      auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+      auto chans = _subchannel_mesh.getGapChannels(i_gap);
       unsigned int i_ch = chans.first;
       unsigned int j_ch = chans.second;
       auto subch_type1 = _subchannel_mesh.getSubchannelType(i_ch);
@@ -276,7 +401,7 @@ LiquidMetalSubChannel1PhaseProblem::computeWijPrime(int iblock)
                  ((*_mdot_soln)(node_out_i) + (*_mdot_soln)(node_out_j)) / (Si_out + Sj_out));
       auto Re = avg_massflux * avg_hD / avg_mu;
       // crossflow area between channels i,j (dz*gap_width)
-      auto gap = _subchannel_mesh.getGapWidth(i_gap);
+      auto gap = _subchannel_mesh.getGapWidth(iz, i_gap);
       auto Sij = dz * gap;
       // Calculation of flow regime
       auto ReL = 320.0 * std::pow(10.0, pitch / rod_diameter - 1);
@@ -552,7 +677,7 @@ LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
         unsigned int counter = 0;
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int ii_ch = chans.first;
           // i is always the smallest and first index in the mapping
           unsigned int jj_ch = chans.second;
@@ -591,11 +716,12 @@ LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
             dist_ij = pitch / std::sqrt(3);
           }
 
-          auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
+          auto Sij = dz * _subchannel_mesh.getGapWidth(iz, i_gap);
           auto thcon_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
           auto thcon_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
-          auto shape_factor = 0.66 * (pitch / rod_diameter) *
-                              std::pow((_subchannel_mesh.getGapWidth(i_gap) / rod_diameter), -0.3);
+          auto shape_factor =
+              0.66 * (pitch / rod_diameter) *
+              std::pow((_subchannel_mesh.getGapWidth(iz, i_gap) / rod_diameter), -0.3);
           if (ii_ch == i_ch)
           {
             e_cond += 0.5 * (thcon_i + thcon_j) * Sij * shape_factor *
@@ -891,7 +1017,7 @@ LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
         // Real radial_heat_conduction(0.0);
         for (auto i_gap : _subchannel_mesh.getChannelGaps(i_ch))
         {
-          auto chans = _subchannel_mesh.getGapNeighborChannels(i_gap);
+          auto chans = _subchannel_mesh.getGapChannels(i_gap);
           unsigned int ii_ch = chans.first;
           unsigned int jj_ch = chans.second;
           auto * node_in_i = _subchannel_mesh.getChannelNode(ii_ch, iz - 1);
@@ -1018,7 +1144,7 @@ LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
             dist_ij = pitch / std::sqrt(3);
           }
 
-          auto Sij = dz * _subchannel_mesh.getGapWidth(i_gap);
+          auto Sij = dz * _subchannel_mesh.getGapWidth(iz, i_gap);
           auto K_i = _fp->k_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
           auto K_j = _fp->k_from_p_T((*_P_soln)(node_in_j), (*_T_soln)(node_in_j));
           auto cp_i = _fp->cp_from_p_T((*_P_soln)(node_in_i), (*_T_soln)(node_in_i));
@@ -1026,8 +1152,9 @@ LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
           auto A_i = K_i / cp_i;
           auto A_j = K_j / cp_j;
           auto harm_A = 2.0 * A_i * A_j / (A_i + A_j);
-          auto shape_factor = 0.66 * (pitch / rod_diameter) *
-                              std::pow((_subchannel_mesh.getGapWidth(i_gap) / rod_diameter), -0.3);
+          auto shape_factor =
+              0.66 * (pitch / rod_diameter) *
+              std::pow((_subchannel_mesh.getGapWidth(iz, i_gap) / rod_diameter), -0.3);
           // auto base_value =  0.5 * (A_i + A_j) * Sij * shape_factor / dist_ij;
           auto base_value = harm_A * shape_factor * Sij / dist_ij;
           auto neg_base_value = -1.0 * base_value;
