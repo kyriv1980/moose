@@ -233,3 +233,5 @@ config.status
 *MooseConfig.h.tmp
 
 Wij_global
+
+subchannel.yaml
