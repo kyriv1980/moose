@@ -1,5 +1,5 @@
 T_in = 660
-mass_flux_in = ${fparse 1e+6 * 300.00 / 36000.*0.5}
+mass_flux_in = '${fparse 1e+6 * 300.00 / 36000.*0.5}'
 P_out = 2.0e5 # Pa
 
 [GlobalParams]
@@ -27,40 +27,52 @@ P_out = 2.0e5 # Pa
 
 [AuxVariables]
   [mdot]
+    block = subchannel
   []
   [SumWij]
+    block = subchannel
   []
   [P]
+    block = subchannel
   []
   [DP]
+    block = subchannel
   []
   [h]
+    block = subchannel
   []
   [T]
+    block = subchannel
   []
   [rho]
+    block = subchannel
   []
   [S]
-  []
-  [Sij]
+    block = subchannel
   []
   [w_perim]
-  []
-  [q_prime]
-  []
-  [q_prime_duct]
-  []
-  [Tduct]
+    block = subchannel
   []
   [mu]
+    block = subchannel
+  []
+  [q_prime]
+    block = subchannel
   []
   [displacement]
+    block = subchannel
+  []
+  [q_prime_duct]
+    block = duct
+  []
+  [Tduct]
+    block = duct
   []
 []
 
 [FluidProperties]
   [sodium]
-      type = PBSodiumFluidProperties
+    type = PBSodiumFluidProperties
   []
 []
 
