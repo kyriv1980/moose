@@ -1,5 +1,5 @@
 T_in = 660
-mass_flux_in = ${fparse 1e+6 * 37.00 / 36000.*0.5}
+mass_flux_in = '${fparse 1e+6 * 37.00 / 36000.*0.5}'
 P_out = 2.0e5 # Pa
 [TriSubChannelMesh]
   [subchannel]
@@ -52,9 +52,6 @@ P_out = 2.0e5 # Pa
   [S]
     block = subchannel
   []
-  [Sij]
-    block = subchannel
-  []
   [w_perim]
     block = subchannel
   []
@@ -62,6 +59,9 @@ P_out = 2.0e5 # Pa
     block = subchannel
   []
   [mu]
+    block = subchannel
+  []
+  [displacement]
     block = subchannel
   []
   [q_prime_duct]
@@ -74,7 +74,7 @@ P_out = 2.0e5 # Pa
 
 [FluidProperties]
   [sodium]
-      type = PBSodiumFluidProperties
+    type = PBSodiumFluidProperties
   []
 []
 
@@ -84,7 +84,6 @@ P_out = 2.0e5 # Pa
   n_blocks = 1
   P_out = 2.0e5
   CT = 1.0
-  enforce_uniform_pressure = false
   compute_density = false
   compute_viscosity = false
   compute_power = true
@@ -207,6 +206,11 @@ P_out = 2.0e5 # Pa
 
 [Executioner]
   type = Steady
+  petsc_options_iname = '-pc_type -pc_hypre_type'
+  petsc_options_value = 'hypre boomeramg'
+  fixed_point_max_its = 2
+  fixed_point_min_its = 2
+  fixed_point_rel_tol = 1e-6
 []
 
 ################################################################################
@@ -219,7 +223,7 @@ P_out = 2.0e5 # Pa
     type = FullSolveMultiApp
     input_files = wrapper.i # seperate file for multiapps due to radial power profile
     execute_on = 'timestep_end'
-    positions = '0   0   0'
+    positions = '0   0   0' #center of assembly
     bounding_box_padding = '10.0 10.0 10.0'
   []
 
@@ -227,32 +231,23 @@ P_out = 2.0e5 # Pa
   [viz]
     type = FullSolveMultiApp
     input_files = "3d.i"
-    execute_on = "timestep_end"
+    execute_on = 'timestep_end'
   []
 []
 
 [Transfers]
-
-  # [duct_temperature_transfer] # Send duct temperature to heat conduction
-  #   type = MultiAppUserObjectTransfer2
-  #   to_multi_app = duct_map
-  #   variable = duct_surface_temperature
-  #   user_object = Tduct_avg_uo
-  #   all_parent_nodes_contained_in_sub_app = true
-  # []
-  #
-  # [q_prime] # Recover q_prime from heat conduction solve
-  #   type = MultiAppUserObjectTransfer2
-  #   from_multi_app = duct_map
-  #   variable = q_prime_duct
-  #   user_object = q_prime_uo
-  # []
-
   [duct_temperature_transfer] # Send duct temperature to heat conduction
     type = MultiAppInterpolationTransfer
     to_multi_app = duct_map
     source_variable = Tduct
     variable = duct_surface_temperature
+  []
+
+  [displacement_transfer]
+    type = MultiAppGeneralFieldNearestNodeTransfer
+    from_multi_app = duct_map
+    source_variable = disp_magnitude
+    variable = displacement
   []
 
   [q_prime] # Recover q_prime from heat conduction solve
@@ -265,6 +260,6 @@ P_out = 2.0e5 # Pa
   [xfer]
     type = MultiAppDetailedSolutionTransfer
     to_multi_app = viz
-    variable = 'mdot SumWij P DP h T rho mu q_prime S'
+    variable = 'mdot SumWij P DP h T rho mu q_prime S displacement'
   []
 []

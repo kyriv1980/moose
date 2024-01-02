@@ -58,9 +58,12 @@ void
 LiquidMetalSubChannel1PhaseProblem::initializeSolution()
 {
   auto pin_mesh_exist = _subchannel_mesh.pinMeshExist();
-  if (pin_mesh_exist)
+  auto duct_mesh_exist = _subchannel_mesh.ductMeshExist();
+  if (pin_mesh_exist || duct_mesh_exist)
   {
-    Real standard_area, wire_area, additional_area, wetted_perimeter;
+    Real standard_area, wire_area, additional_area, wetted_perimeter, displaced_area;
+    auto flat_to_flat = _tri_sch_mesh.getFlatToFlat();
+    auto n_rings = _tri_sch_mesh.getNumOfRings();
     auto pitch = _subchannel_mesh.getPitch();
     auto rod_diameter = _subchannel_mesh.getRodDiameter();
     auto wire_diameter = _tri_sch_mesh.getWireDiameter();
@@ -79,26 +82,38 @@ LiquidMetalSubChannel1PhaseProblem::initializeSolution()
         auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
         auto * node = _subchannel_mesh.getChannelNode(i_ch, iz);
         auto Z = _z_grid[iz];
-
         Real rod_area = 0.0;
         Real rod_perimeter = 0.0;
-        Real Index = 0.0;
-        for (auto i_pin : _subchannel_mesh.getChannelPins(i_ch))
+        if (pin_mesh_exist)
         {
-          auto * pin_node = _subchannel_mesh.getPinNode(i_pin, iz);
-          if (subch_type == EChannelType::CENTER || subch_type == EChannelType::CORNER)
+          for (auto i_pin : _subchannel_mesh.getChannelPins(i_ch))
           {
-            rod_area +=
-                (1.0 / 6.0) * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
-            rod_perimeter += (1.0 / 6.0) * M_PI * (*_Dpin_soln)(pin_node);
-            Index += 1.0;
+            auto * pin_node = _subchannel_mesh.getPinNode(i_pin, iz);
+            if (subch_type == EChannelType::CENTER || subch_type == EChannelType::CORNER)
+            {
+              rod_area +=
+                  (1.0 / 6.0) * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
+              rod_perimeter += (1.0 / 6.0) * M_PI * (*_Dpin_soln)(pin_node);
+            }
+            else
+            {
+              rod_area +=
+                  (1.0 / 4.0) * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
+              rod_perimeter += (1.0 / 4.0) * M_PI * (*_Dpin_soln)(pin_node);
+            }
+          }
+        }
+        else
+        {
+          if (subch_type == EChannelType::CENTER || subch_type == EChannelType::EDGE)
+          {
+            rod_area = (1.0 / 2.0) * 0.25 * M_PI * rod_diameter * rod_diameter;
+            rod_perimeter = (1.0 / 2.0) * M_PI * rod_diameter;
           }
           else
           {
-            rod_area +=
-                (1.0 / 4.0) * 0.25 * M_PI * (*_Dpin_soln)(pin_node) * (*_Dpin_soln)(pin_node);
-            rod_perimeter += (1.0 / 4.0) * M_PI * (*_Dpin_soln)(pin_node);
-            Index += 1.0;
+            rod_area = (1.0 / 6.0) * 0.25 * M_PI * rod_diameter * rod_diameter;
+            rod_perimeter = (1.0 / 6.0) * M_PI * rod_diameter;
           }
         }
 
@@ -106,6 +121,7 @@ LiquidMetalSubChannel1PhaseProblem::initializeSolution()
         {
           standard_area = std::pow(pitch, 2.0) * std::sqrt(3.0) / 4.0;
           additional_area = 0.0;
+          displaced_area = 0.0;
           wire_area = libMesh::pi * std::pow(wire_diameter, 2.0) / 8.0 / std::cos(theta);
           wetted_perimeter = rod_perimeter + 0.5 * libMesh::pi * wire_diameter / std::cos(theta);
         }
@@ -113,6 +129,7 @@ LiquidMetalSubChannel1PhaseProblem::initializeSolution()
         {
           standard_area = pitch * (rod_diameter / 2.0 + gap);
           additional_area = 0.0;
+          displaced_area = (*_displacement_soln)(node)*pitch;
           wire_area = libMesh::pi * std::pow(wire_diameter, 2.0) / 8.0 / std::cos(theta);
           wetted_perimeter =
               rod_perimeter + 0.5 * libMesh::pi * wire_diameter / std::cos(theta) + pitch;
@@ -121,13 +138,18 @@ LiquidMetalSubChannel1PhaseProblem::initializeSolution()
         {
           standard_area = 1.0 / std::sqrt(3.0) * std::pow((rod_diameter / 2.0 + gap), 2.0);
           additional_area = 0.0;
+          displaced_area = 1.0 / std::sqrt(3.0) *
+                           (rod_diameter + 2.0 * gap + (*_displacement_soln)(node)) *
+                           (*_displacement_soln)(node);
           wire_area = libMesh::pi / 24.0 * std::pow(wire_diameter, 2.0) / std::cos(theta);
-          wetted_perimeter = rod_perimeter + libMesh::pi * wire_diameter / std::cos(theta) / 6.0 +
-                             2.0 / std::sqrt(3.0) * (rod_diameter / 2.0 + gap);
+          wetted_perimeter =
+              rod_perimeter + libMesh::pi * wire_diameter / std::cos(theta) / 6.0 +
+              2.0 / std::sqrt(3.0) * (rod_diameter / 2.0 + gap + (*_displacement_soln)(node));
         }
 
         /// Calculate subchannel area
-        auto subchannel_area = standard_area + additional_area - rod_area - wire_area;
+        auto subchannel_area =
+            standard_area + additional_area + displaced_area - rod_area - wire_area;
 
         /// Apply area reduction on subchannels affected by blockage
         auto index = 0;
@@ -139,30 +161,48 @@ LiquidMetalSubChannel1PhaseProblem::initializeSolution()
           }
           index++;
         }
-
         _S_flow_soln->set(node, subchannel_area);
         _w_perim_soln->set(node, wetted_perimeter);
       }
     }
 
-    for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
+    if (pin_mesh_exist)
     {
-      for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
+      for (unsigned int iz = 0; iz < _n_cells + 1; iz++)
       {
-        auto gap_pins = _subchannel_mesh.getGapPins(i_gap);
-        auto pin_1 = gap_pins.first;
-        auto pin_2 = gap_pins.second;
-        auto * pin_node_1 = _subchannel_mesh.getPinNode(pin_1, iz);
-        auto * pin_node_2 = _subchannel_mesh.getPinNode(pin_2, iz);
+        for (unsigned int i_gap = 0; i_gap < _n_gaps; i_gap++)
+        {
+          auto gap_pins = _subchannel_mesh.getGapPins(i_gap);
+          auto pin_1 = gap_pins.first;
+          auto pin_2 = gap_pins.second;
+          auto * pin_node_1 = _subchannel_mesh.getPinNode(pin_1, iz);
+          auto * pin_node_2 = _subchannel_mesh.getPinNode(pin_2, iz);
 
-        if (pin_1 == pin_2) // Corner or edge gap
-        {
-          _tri_sch_mesh._gij_map[iz][i_gap] = (pitch - (*_Dpin_soln)(pin_node_1)) / 2.0 + gap;
-        }
-        else // center gap
-        {
-          _tri_sch_mesh._gij_map[iz][i_gap] =
-              pitch - (*_Dpin_soln)(pin_node_1) / 2.0 - (*_Dpin_soln)(pin_node_2) / 2.0;
+          if (pin_1 == pin_2) // Corner or edge gap
+          {
+            auto displacement = 0.0;
+            auto counter = 0.0;
+            for (auto i_ch : _subchannel_mesh.getPinChannels(pin_1))
+            {
+              auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
+              auto * node = _subchannel_mesh.getChannelNode(i_ch, iz);
+              if (subch_type == EChannelType::CENTER || subch_type == EChannelType::CORNER)
+              {
+                displacement += (*_displacement_soln)(node);
+                counter += 1.0;
+              }
+            }
+            displacement = displacement / counter;
+            _tri_sch_mesh._gij_map[iz][i_gap] =
+                0.5 * (flat_to_flat - (n_rings - 1) * pitch * std::sqrt(3.0) -
+                       (*_Dpin_soln)(pin_node_1)) +
+                displacement;
+          }
+          else // center gap
+          {
+            _tri_sch_mesh._gij_map[iz][i_gap] =
+                pitch - (*_Dpin_soln)(pin_node_1) / 2.0 - (*_Dpin_soln)(pin_node_2) / 2.0;
+          }
         }
       }
     }
