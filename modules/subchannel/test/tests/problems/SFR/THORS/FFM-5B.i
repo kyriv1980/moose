@@ -1,6 +1,6 @@
 ################################################################################
 ## THORS bundle 5B partial edge blockage benchmark                            ##
-## Pronghorn Subchannel simulation                                            ##
+## MOOSE Subchannel simulation                                                ##
 ## POC : Vasileios Kyriakopoulos, vasileios.kyriakopoulos@inl.gov             ##
 ################################################################################
 # Details on the experimental facility modeled can be found at:
@@ -14,10 +14,10 @@ T_in = 541.55 #K, low flow case
 A12 = 1.00423e3
 A13 = -0.21390
 A14 = -1.1046e-5
-rho = ${fparse A12 + A13 * T_in + A14 * T_in * T_in}
+rho = '${fparse A12 + A13 * T_in + A14 * T_in * T_in}'
 # inlet_vel = 6.93 #m/sec, high flow case
 inlet_vel = 0.48 #m/sec, low flow case
-mass_flux_in = ${fparse rho *  inlet_vel}
+mass_flux_in = '${fparse rho *  inlet_vel}'
 P_out = 2.0e5 # Pa
 [TriSubChannelMesh]
   [subchannel]
@@ -70,12 +70,12 @@ P_out = 2.0e5 # Pa
 
 [FluidProperties]
   [sodium]
-      type = PBSodiumFluidProperties
+    type = PBSodiumFluidProperties
   []
 []
 
 [Problem]
-  type = LiquidMetalSubChannel1PhaseProblem
+  type = TriSubChannel1PhaseProblem
   fp = sodium
   n_blocks = 1
   P_out = 2.0e5
@@ -101,11 +101,11 @@ P_out = 2.0e5 # Pa
     variable = w_perim
   []
 
-   [q_prime_IC]
+  [q_prime_IC]
     type = TriPowerIC
     variable = q_prime
     # power = 145000  #W, high flow case
-    power = 52800  #W, low flow case
+    power = 52800 #W, low flow case
     filename = "pin_power_profile_19.txt"
   []
 

@@ -15,31 +15,38 @@
 #pragma once
 
 #include "SubChannel1PhaseProblem.h"
-#include "QuadSubChannelMesh.h"
 
-class LiquidWaterSubChannel1PhaseProblem;
+class TriSubChannel1PhaseProblem;
+class TriSubChannelMesh;
 /**
- * Steady state subchannel solver for 1-phase quad liquid water coolant
+ * Triangular subchannel solver
  */
-class LiquidWaterSubChannel1PhaseProblem : public SubChannel1PhaseProblem
+class TriSubChannel1PhaseProblem : public SubChannel1PhaseProblem
 {
 public:
-  LiquidWaterSubChannel1PhaseProblem(const InputParameters & params);
+  TriSubChannel1PhaseProblem(const InputParameters & params);
+
+  virtual ~TriSubChannel1PhaseProblem();
 
 protected:
   virtual void initializeSolution() override;
+  /**
+   * Computes the axial friction factor for the sodium coolant and
+   * for each subchannel.
+   * Upgraded Cheng-Todreas Correlation (2018).
+   */
   virtual Real computeFrictionFactor(_friction_args_struct friction_args) override;
   virtual Real computeAddedHeatPin(unsigned int i_ch, unsigned int iz) override;
   virtual void computeWijPrime(int iblock) override;
   virtual void computeh(int iblock) override;
-  QuadSubChannelMesh & _subchannel_mesh;
-
-  /// Thermal diffusion coefficient used in turbulent crossflow
-  const Real & _beta;
-  /// Flag that activates one of the two friction models (default: f=a*Re^b, non-default: Todreas-Kazimi)
-  const bool _default_friction_model;
-  /// Flag that activates the use of constant beta
-  const bool _constant_beta;
+  TriSubChannelMesh & _tri_sch_mesh;
+  // Extra objects for heat conduction, which is important with metal coolants
+  Mat _hc_axial_heat_conduction_mat;
+  Vec _hc_axial_heat_conduction_rhs;
+  Mat _hc_radial_heat_conduction_mat;
+  Vec _hc_radial_heat_conduction_rhs;
+  Mat _hc_sweep_enthalpy_mat;
+  Vec _hc_sweep_enthalpy_rhs;
 
 public:
   static InputParameters validParams();

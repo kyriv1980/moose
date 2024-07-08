@@ -12,23 +12,22 @@
 /*               See COPYRIGHT for full restrictions                */
 /********************************************************************/
 
-#include "LiquidMetalSubChannel1PhaseProblem.h"
+#include "TriSubChannel1PhaseProblem.h"
 #include "AuxiliarySystem.h"
 #include "TriSubChannelMesh.h"
 
-registerMooseObject("SubChannelApp", LiquidMetalSubChannel1PhaseProblem);
+registerMooseObject("SubChannelApp", TriSubChannel1PhaseProblem);
 
 InputParameters
-LiquidMetalSubChannel1PhaseProblem::validParams()
+TriSubChannel1PhaseProblem::validParams()
 {
   InputParameters params = SubChannel1PhaseProblem::validParams();
-  params.addClassDescription("Solver class for metal-cooled subchannels in a triangular lattice "
-                             "assembly and bare/wire-wrapped fuel rods");
+  params.addClassDescription("Solver class for subchannels in a triangular lattice assembly and "
+                             "bare/wire-wrapped fuel rods");
   return params;
 }
 
-LiquidMetalSubChannel1PhaseProblem::LiquidMetalSubChannel1PhaseProblem(
-    const InputParameters & params)
+TriSubChannel1PhaseProblem::TriSubChannel1PhaseProblem(const InputParameters & params)
   : SubChannel1PhaseProblem(params),
     _tri_sch_mesh(dynamic_cast<TriSubChannelMesh &>(_subchannel_mesh))
 {
@@ -43,7 +42,7 @@ LiquidMetalSubChannel1PhaseProblem::LiquidMetalSubChannel1PhaseProblem(
   createPetscVector(_hc_sweep_enthalpy_rhs, _block_size * _n_channels);
 }
 
-LiquidMetalSubChannel1PhaseProblem::~LiquidMetalSubChannel1PhaseProblem()
+TriSubChannel1PhaseProblem::~TriSubChannel1PhaseProblem()
 {
   // Clean up heat conduction system
   MatDestroy(&_hc_axial_heat_conduction_mat);
@@ -55,7 +54,7 @@ LiquidMetalSubChannel1PhaseProblem::~LiquidMetalSubChannel1PhaseProblem()
 }
 
 void
-LiquidMetalSubChannel1PhaseProblem::initializeSolution()
+TriSubChannel1PhaseProblem::initializeSolution()
 {
   if (_deformation)
   {
@@ -204,7 +203,7 @@ LiquidMetalSubChannel1PhaseProblem::initializeSolution()
 }
 
 Real
-LiquidMetalSubChannel1PhaseProblem::computeFrictionFactor(_friction_args_struct friction_args)
+TriSubChannel1PhaseProblem::computeFrictionFactor(_friction_args_struct friction_args)
 {
   auto Re = friction_args.Re;
   auto i_ch = friction_args.i_ch;
@@ -228,7 +227,7 @@ LiquidMetalSubChannel1PhaseProblem::computeFrictionFactor(_friction_args_struct 
   auto theta = std::acos(wire_lead_length /
                          std::sqrt(std::pow(wire_lead_length, 2) +
                                    std::pow(libMesh::pi * (rod_diameter + wire_diameter), 2)));
-  auto wd_t = (19.56 + 98.71 * (wire_diameter / rod_diameter) +
+  auto wd_t = (19.56 - 98.71 * (wire_diameter / rod_diameter) +
                303.47 * std::pow((wire_diameter / rod_diameter), 2.0)) *
               std::pow((wire_lead_length / rod_diameter), -0.541);
   auto wd_l = 1.4 * wd_t;
@@ -385,7 +384,7 @@ LiquidMetalSubChannel1PhaseProblem::computeFrictionFactor(_friction_args_struct 
 }
 
 void
-LiquidMetalSubChannel1PhaseProblem::computeWijPrime(int iblock)
+TriSubChannel1PhaseProblem::computeWijPrime(int iblock)
 {
   unsigned int last_node = (iblock + 1) * _block_size;
   unsigned int first_node = iblock * _block_size + 1;
@@ -511,51 +510,39 @@ LiquidMetalSubChannel1PhaseProblem::computeWijPrime(int iblock)
 }
 
 Real
-LiquidMetalSubChannel1PhaseProblem::computeAddedHeatPin(unsigned int i_ch, unsigned int iz)
+TriSubChannel1PhaseProblem::computeAddedHeatPin(unsigned int i_ch, unsigned int iz)
 {
   auto dz = _z_grid[iz] - _z_grid[iz - 1];
   auto subch_type = _subchannel_mesh.getSubchannelType(i_ch);
-  // If pin mesh exists, then project pin power to subchannel
+
   if (_pin_mesh_exist)
   {
-    auto heat_rate_in = 0.0;
-    auto heat_rate_out = 0.0;
-    if (subch_type == EChannelType::CENTER)
+    double factor;
+    switch (subch_type)
     {
-      for (unsigned int j = 0; j < 3; j++)
-      {
-        auto i_pin = _subchannel_mesh.getChannelPins(i_ch)[j];
-        auto * node_in = _subchannel_mesh.getPinNode(i_pin, iz - 1);
-        auto * node_out = _subchannel_mesh.getPinNode(i_pin, iz);
-        heat_rate_out += (*_q_prime_soln)(node_out);
-        heat_rate_in += (*_q_prime_soln)(node_in);
-      }
-      return 1.0 / 6.0 * (heat_rate_in + heat_rate_out) * dz / 2.0;
+      case EChannelType::CENTER:
+        factor = 1.0 / 6.0;
+        break;
+      case EChannelType::EDGE:
+        factor = 1.0 / 4.0;
+        break;
+      case EChannelType::CORNER:
+        factor = 1.0 / 6.0;
+        break;
+      default:
+        return 0.0; // handle invalid subch_type if needed
     }
-    else if (subch_type == EChannelType::EDGE)
+    double heat_rate_in = 0.0;
+    double heat_rate_out = 0.0;
+    for (auto i_pin : _subchannel_mesh.getChannelPins(i_ch))
     {
-      for (unsigned int j = 0; j < 2; j++)
-      {
-        auto i_pin = _subchannel_mesh.getChannelPins(i_ch)[j];
-        auto * node_in = _subchannel_mesh.getPinNode(i_pin, iz - 1);
-        auto * node_out = _subchannel_mesh.getPinNode(i_pin, iz);
-        heat_rate_out += (*_q_prime_soln)(node_out);
-        heat_rate_in += (*_q_prime_soln)(node_in);
-      }
-      return 1.0 / 4.0 * (heat_rate_in + heat_rate_out) * dz / 2.0;
-    }
-    else
-    {
-      auto i_pin = _subchannel_mesh.getChannelPins(i_ch)[0];
       auto * node_in = _subchannel_mesh.getPinNode(i_pin, iz - 1);
       auto * node_out = _subchannel_mesh.getPinNode(i_pin, iz);
-      heat_rate_out += (*_q_prime_soln)(node_out);
-      heat_rate_in += (*_q_prime_soln)(node_in);
-      return 1.0 / 6.0 * (heat_rate_in + heat_rate_out) * dz / 2.0;
+      heat_rate_out += factor * (*_q_prime_soln)(node_out);
+      heat_rate_in += factor * (*_q_prime_soln)(node_in);
     }
+    return (heat_rate_in + heat_rate_out) * dz / 2.0;
   }
-  // If pin mesh does not exist, then apply power to subchannel directly
-  // Note: this power was already set by  TriPowerIC
   else
   {
     auto * node_in = _subchannel_mesh.getChannelNode(i_ch, iz - 1);
@@ -565,7 +552,7 @@ LiquidMetalSubChannel1PhaseProblem::computeAddedHeatPin(unsigned int i_ch, unsig
 }
 
 void
-LiquidMetalSubChannel1PhaseProblem::computeh(int iblock)
+TriSubChannel1PhaseProblem::computeh(int iblock)
 {
   unsigned int last_node = (iblock + 1) * _block_size;
   unsigned int first_node = iblock * _block_size + 1;

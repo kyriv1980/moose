@@ -20,9 +20,8 @@ Power = 90640 # Watt Each heater rod had a max power of 30kW
 # Index of heated pins per silicon controled rectifiers (Areva notation):1 3 6 7 || 4 5 11 15 ||2 9 19 40 60 || 13 44 48 52 56 (from bottom to top)
 # Index of heated pins per silicon controled rectifiers (SC notation):0 3 6 1 || 4 5 12 16 || 2 10 8 43 39 || 14 47 51 55 59 (from top to bottom) 38 areva->41 SC
 # Relative power of pin per rectifier: 1.12266659312 || 1.12251765225 || 0.90373345101 || 0.90011915269
-mdot_average = '${fparse 9.58 * Total_Surface_Area_SC / Total_Surface_Area_EXP}'
+mdot_average = '${fparse 9.43 * Total_Surface_Area_SC / Total_Surface_Area_EXP}'
 mass_flux_in = '${fparse mdot_average / Total_Surface_Area_SC}' #kg/m2
-# mass_flux_in = 3456.29
 ###################################################
 # Geometric parameters (non-deformed heated bundle)
 ###################################################
@@ -41,7 +40,7 @@ unheated_length_exit = 0.855 #m
   [subchannel]
     type = TriSubChannelMeshGenerator
     nrings = ${n_rings}
-    n_cells = 56
+    n_cells = 65
     flat_to_flat = ${inner_duct_in}
     unheated_length_entry = ${unheated_length_entry}
     heated_length = ${heated_length}
@@ -58,7 +57,7 @@ unheated_length_exit = 0.855 #m
     type = TriPinMeshGenerator
     input = subchannel
     nrings = ${n_rings}
-    n_cells = 56
+    n_cells = 65
     unheated_length_entry = ${unheated_length_entry}
     heated_length = ${heated_length}
     unheated_length_exit = ${unheated_length_exit}
@@ -127,7 +126,7 @@ unheated_length_exit = 0.855 #m
 []
 
 [Problem]
-  type = LiquidMetalSubChannel1PhaseProblem
+  type = TriSubChannel1PhaseProblem
   fp = water
   n_blocks = 1
   P_out = ${P_out}
@@ -140,7 +139,7 @@ unheated_length_exit = 0.855 #m
   implicit = true
   segregated = false
   interpolation_scheme = 'upwind'
-  verbose_subchannel = false
+  verbose_subchannel = true
   deformation = true
 []
 
@@ -248,225 +247,233 @@ unheated_length_exit = 0.855 #m
 []
 
 [Postprocessors]
+  ##### Pressure on Face B at various axial heights
   ##### -4 pitch from heated entrance
-  [Pressure_B04_109]
+  [Pressure_FB1]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 0.0
   []
   ##### -3 pitch from heated entrance
-  [Pressure_B03_109]
+  [Pressure_FB2]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 0.285
   []
   ##### -2 pitch from heated entrance
-  [Pressure_B02_109]
+  [Pressure_FB3]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 0.57
   []
   ##### -1.5 pitch from heated entrance
-  [Pressure_B015_109]
+  [Pressure_FB4]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 0.7125
   []
   ##### -0.5 pitch from heated entrance
-  [Pressure_B05_109]
+  [Pressure_FB5]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 0.9975
   []
   ##### 0 pitch from heated entrance
-  [Pressure_B0_109]
+  [Pressure_FB6]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 1.14
   []
   #### 3 pitch from heated entrance
-  [Pressure_B3_109]
+  [Pressure_FB7]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 1.995
   []
   #### 6 pitch from heated entrance
-  [Pressure_B6_109]
+  [Pressure_FB9]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 2.85
   []
   #### 8 pitch from heated entrance
-  [Pressure_B8_109]
+  [Pressure_FB8]
     type = SubChannelPointValue
     variable = P
-    index = 109
+    index = 108
     execute_on = 'TIMESTEP_END'
     height = 3.42
   []
-  ###### Temperature at 4'o clock at plane B ( SC) ##########
-  ###### Plane B is 4.4167 P above start of heated section
-  ###### Plane B: z = 2.3987595
-  [Temp_B4_01]
+  # # ###### Temperature at 4' and 6' o clock at plane B (SC) ##########
+  # # ###### Plane B is 4.4167 P above start of heated section
+  # # ###### Plane B: z = 2.3987595
+  [Temp_B_01]
     type = SubChannelPointValue
     variable = T
     index = 14
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_02]
+  [Temp_B_02]
     type = SubChannelPointValue
     variable = T
     index = 28
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_03]
+  [Temp_B_03]
     type = SubChannelPointValue
     variable = T
-    index = 44
+    index = 45
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_04]
+  [Temp_B_04]
     type = SubChannelPointValue
     variable = T
-    index = 31
+    index = 47
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_05]
+  [Temp_B_05]
     type = SubChannelPointValue
     variable = T
     index = 33
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_06]
+  [Temp_B_06]
     type = SubChannelPointValue
     variable = T
-    index = 12
+    index = 23
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_07]
+  [Temp_B_07]
     type = SubChannelPointValue
     variable = T
-    index = 57
+    index = 39
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_08]
+  [Temp_B_08]
     type = SubChannelPointValue
     variable = T
-    index = 82
+    index = 62
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_09]
+  [Temp_B_09]
     type = SubChannelPointValue
     variable = T
-    index = 64
+    index = 86
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_10]
+  [Temp_B_10]
     type = SubChannelPointValue
     variable = T
-    index = 48
+    index = 66
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_11]
+  [Temp_B_11]
     type = SubChannelPointValue
     variable = T
     index = 51
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_12]
+  [Temp_B_12]
     type = SubChannelPointValue
     variable = T
-    index = 103
+    index = 77
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_13]
+  [Temp_B_13]
     type = SubChannelPointValue
     variable = T
-    index = 105
+    index = 79
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_14]
+  [Temp_B_14]
     type = SubChannelPointValue
     variable = T
     index = 106
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_15]
+  [Temp_B_15]
     type = SubChannelPointValue
     variable = T
     index = 112
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_16]
+  [Temp_B_16]
     type = SubChannelPointValue
     variable = T
     index = 111
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_18]
+  [Temp_B_17]
+    type = SubChannelPointValue
+    variable = T
+    index = 117
+    execute_on = 'TIMESTEP_END'
+    height = 2.3987595
+  []
+  [Temp_B_18]
     type = SubChannelPointValue
     variable = T
     index = 119
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_19]
+  [Temp_B_19]
     type = SubChannelPointValue
     variable = T
     index = 120
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_20]
+  [Temp_B_20]
     type = SubChannelPointValue
     variable = T
     index = 95
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_21]
+  [Temp_B_21]
     type = SubChannelPointValue
     variable = T
-    index = 73
+    index = 54
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
-  [Temp_B4_22]
+  [Temp_B_22]
     type = SubChannelPointValue
     variable = T
-    index = 75
+    index = 56
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
@@ -506,6 +513,199 @@ unheated_length_exit = 0.855 #m
     execute_on = 'TIMESTEP_END'
     height = 2.3987595
   []
+  ###### Temperature at 8 and 10 'o clock at plane C ##########
+  ###### Plane C is 6.75 P above start of heated section
+  ###### Plane C: z = 3.06375 [m]
+  # [Temp_C_01]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 25
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_02]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 15
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_03]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 18
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_04]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 32
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_05]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 51
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_06]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 53
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_07]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 56
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 2.3987595
+  # []
+  # [Temp_C_08]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 29
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_09]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 47
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_10]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 67
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_11]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 93
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_12]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 76
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_13]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 78
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_14]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 79
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_15]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 84
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_16]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 85
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_17]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 116
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_18]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 120
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_19]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 122
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_20]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 97
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_21]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 96
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_22]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 99
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # ########### Planar mean of temperature at plane C
+  # [Temp_C]
+  #   type = PlanarMean
+  #   variable = T
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # ####### Temperature at wall E at plane B
+  # [Temp_C_E1]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 121
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_E2]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 123
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_E4]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 124
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
+  # [Temp_C_E5]
+  #   type = SubChannelPointValue
+  #   variable = T
+  #   index = 125
+  #   execute_on = 'TIMESTEP_END'
+  #   height = 3.06375
+  # []
 []
 
 [Executioner]

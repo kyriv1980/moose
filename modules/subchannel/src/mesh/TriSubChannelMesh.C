@@ -68,7 +68,7 @@ TriSubChannelMesh::TriSubChannelMesh(const TriSubChannelMesh & other_mesh)
 std::unique_ptr<MooseMesh>
 TriSubChannelMesh::safeClone() const
 {
-  return libmesh_make_unique<TriSubChannelMesh>(*this);
+  return _app.getFactory().copyConstruct(*this);
 }
 
 unsigned int
