@@ -193,6 +193,7 @@ P_out = 2.0e5 # Pa
 
 [Outputs]
   exodus = true
+  csv = true
 []
 
 [Postprocessors]
@@ -201,6 +202,12 @@ P_out = 2.0e5 # Pa
     variable = T
     execute_on = 'TIMESTEP_END'
     height = 0.5
+  []
+
+  [PinTemp]
+    type = PinSurfaceTemperature
+    index = 10
+    height = 2
   []
 []
 

@@ -18,13 +18,13 @@
 #include "SubChannelMesh.h"
 
 /**
- * Calculates an overall Delta of a chosen variable for the subchannel assembly
+ * Returns the surface temperature of a specific fuel pin at a user defined height
  */
-class PlanarMean : public GeneralPostprocessor
+class PinSurfaceTemperature : public GeneralPostprocessor
 {
 public:
   static InputParameters validParams();
-  PlanarMean(const InputParameters & params);
+  PinSurfaceTemperature(const InputParameters & params);
   virtual void initialize() override {}
   virtual void execute() override;
   virtual void finalize() override {}
@@ -32,7 +32,7 @@ public:
 
 protected:
   SubChannelMesh & _mesh;
-  AuxVariableName const & _variable;
   const Real & _height;
-  Real _mean_value;
+  const int & _i_pin;
+  Real _value;
 };

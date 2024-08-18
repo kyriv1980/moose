@@ -197,6 +197,15 @@ P_out = 4.923e6 # Pa
     file_base = "Temp_Out_Implicit_Segregated.txt"
     height = 1.0
   []
+  csv = true
+[]
+
+[Postprocessors]
+  [PinTemp]
+    type = PinSurfaceTemperature
+    index = 10
+    height = 0.5
+  []
 []
 
 [Executioner]
