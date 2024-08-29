@@ -1,0 +1,8 @@
+[Tests]
+  [test]
+    type = CSVDiff
+    input = 'test.i'
+    csvdiff = 'Temp_out_matrix.csv'
+    recover = False
+  []
+[]
